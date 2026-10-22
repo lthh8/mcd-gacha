@@ -130,6 +130,25 @@
   .sr-flash{position:fixed;inset:0;pointer-events:none;z-index:50;opacity:0}
   .sr-flash.go{animation:flash .9s ease}
   @keyframes flash{0%{opacity:0}20%{opacity:.9;background:radial-gradient(circle,rgba(255,220,120,.85),transparent 60%)}100%{opacity:0}}
+
+  /* ===== 大图预览（lightbox）===== */
+  .lb{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;padding:20px}
+  .lb[hidden]{display:none}
+  .lb-mask{position:absolute;inset:0;background:rgba(4,8,18,.85);backdrop-filter:blur(6px);animation:lbFade .18s ease}
+  @keyframes lbFade{from{opacity:0}to{opacity:1}}
+  .lb-box{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;animation:lbPop .24s cubic-bezier(.2,.9,.3,1.15)}
+  @keyframes lbPop{from{opacity:0;transform:scale(.9) translateY(12px)}to{opacity:1;transform:none}}
+  .lb-stage{perspective:1200px;line-height:0}
+  .lb-card{width:min(74vw,calc(76vh*0.75));aspect-ratio:360/480;height:auto!important;
+    border-radius:18px;transform:rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg));
+    transition:transform .12s ease-out;transform-style:preserve-3d}
+  .lb-close{position:absolute;top:-46px;right:-4px;width:36px;height:36px;border:none;border-radius:50%;
+    background:rgba(255,255,255,.14);color:#fff;font-size:20px;cursor:pointer;line-height:1;padding:0}
+  .lb-close:hover{background:rgba(255,255,255,.26)}
+  .lb-cap{color:#e8d9b8;font-size:14px;letter-spacing:1px;margin-top:16px;line-height:1.5;text-align:center}
+  .lb-cap b{color:#ffd777}
+  .lb-hint{color:#8b93a8;font-size:12px;margin-top:4px;letter-spacing:2px}
+  @media (max-width:560px){.lb-card{width:min(88vw,calc(66vh*0.75))}}
 </style>
 </head>
 <body>
@@ -942,6 +961,7 @@ function showSingle(f){
   stage.innerHTML='';
   const wrap=document.createElement('div');
   wrap.className='revealwrap single';
+  wrap.dataset.key=f.key;
   wrap.appendChild(cardEl(f));
   const cover=document.createElement('div');
   cover.className='cover';cover.textContent='?';
@@ -962,6 +982,7 @@ function showTen(list){
   list.forEach((f,i)=>{
     const cell=document.createElement('div');
     cell.className='revealwrap';
+    cell.dataset.key=f.key;
     cell.appendChild(cardEl(f));
     const cover=document.createElement('div');
     cover.className='cover';cover.textContent='?';
@@ -990,7 +1011,7 @@ function refresh(){
   document.getElementById('pityInfo').textContent='本抽累计：'+save.draws;
   const grid=document.getElementById('grid');
   grid.innerHTML=FOODS.map(f=>{const n=save.owned[f.key]||0;const owned=n>0;
-    return `<div class="cell">
+    return `<div class="cell" data-key="${f.key}">
       ${n>1?`<span class="count-badge">×${n}</span>`:''}
       <div class="card rar-${f.rarity.toLowerCase()}">${cardSVG(f,false,!owned)}
         <div class="holo"></div><div class="sweep"></div><div class="glare"></div></div>
@@ -1072,6 +1093,54 @@ async function makeShare(){
 
 refresh();
 if(!storageOK){const w=document.getElementById('storageWarn');if(w)w.style.display='block'}
+
+/* ===== 大图预览（lightbox）===== */
+(function(){
+  const lb=document.getElementById('lb');
+  const stage=document.getElementById('lbStage');
+  const cap=document.getElementById('lbCap');
+  const RMAP={ssr:'SSR',sr:'SR',r:'R',n:'N'};
+  function open(card,key){
+    stage.innerHTML='';
+    const scene=document.createElement('div');scene.className='lb-scene';
+    const c=card.cloneNode(true);c.classList.add('lb-card');
+    scene.appendChild(c);stage.appendChild(scene);
+    const f=FOODS.find(x=>x.key===key);
+    const m=c.className.match(/rar-(ssr|sr|r|n)\b/);
+    const r=m?RMAP[m[1]]:'';
+    const owned=key&&save.owned[key];
+    cap.innerHTML=f?`<b>${f.name}</b> <span style="opacity:.72">· ${r||f.rarity}${owned?` · 已收集 ×${owned}`:''}</span>`:'';
+    lb.hidden=false;document.body.style.overflow='hidden';
+  }
+  function close(){lb.hidden=true;stage.innerHTML='';document.body.style.overflow=''}
+  document.addEventListener('click',e=>{
+    if(!lb.hidden){ if(e.target.closest('.lb-close')||e.target.classList.contains('lb-mask')||e.target.closest('.lb-cap'))close(); return; }
+    const holder=e.target.closest('[data-key]'); if(!holder)return;
+    const card=holder.querySelector('.card'); if(!card)return;
+    open(card,holder.dataset.key);
+  });
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!lb.hidden)close()});
+  stage.addEventListener('pointermove',e=>{
+    const c=stage.querySelector('.lb-card');if(!c)return;
+    const r=c.getBoundingClientRect();
+    const px=(e.clientX-r.left)/r.width,py=(e.clientY-r.top)/r.height;
+    c.style.setProperty('--mx',(px*100).toFixed(1)+'%');c.style.setProperty('--my',(py*100).toFixed(1)+'%');
+    c.style.setProperty('--ry',((px-0.5)*16).toFixed(1)+'deg');c.style.setProperty('--rx',((0.5-py)*16).toFixed(1)+'deg');
+  });
+  stage.addEventListener('pointerleave',()=>{
+    const c=stage.querySelector('.lb-card');
+    if(c){c.style.setProperty('--rx','0deg');c.style.setProperty('--ry','0deg');c.style.setProperty('--mx','50%');c.style.setProperty('--my','50%')}
+  });
+})();
 </script>
+<div class="lb" id="lb" hidden>
+  <div class="lb-mask"></div>
+  <div class="lb-box">
+    <button class="lb-close" type="button" title="关闭（Esc）">&times;</button>
+    <div class="lb-stage" id="lbStage"></div>
+    <div class="lb-cap" id="lbCap"></div>
+    <div class="lb-hint">点击任意处或按 Esc 关闭</div>
+  </div>
+</div>
 </body>
 </html>

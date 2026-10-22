@@ -70,6 +70,25 @@
   .lbl{font-family:KaiTi,STKaiti,serif;font-weight:bold;font-size:11.5px;
     paint-order:stroke;stroke:#0d1526;stroke-width:3.2;stroke-linejoin:round}
   .ft{margin-top:30px;text-align:center;font-size:11px;color:#767f9e}
+
+  /* ===== 大图预览（lightbox）===== */
+  .lb{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;padding:20px}
+  .lb[hidden]{display:none}
+  .lb-mask{position:absolute;inset:0;background:rgba(4,8,18,.85);backdrop-filter:blur(6px);animation:lbFade .18s ease}
+  @keyframes lbFade{from{opacity:0}to{opacity:1}}
+  .lb-box{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;animation:lbPop .24s cubic-bezier(.2,.9,.3,1.15)}
+  @keyframes lbPop{from{opacity:0;transform:scale(.9) translateY(12px)}to{opacity:1;transform:none}}
+  .lb-stage{perspective:1200px;line-height:0}
+  .lb-card{width:min(74vw,calc(76vh*0.75));aspect-ratio:360/480;height:auto!important;
+    border-radius:18px;transform:rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg));
+    transition:transform .12s ease-out;transform-style:preserve-3d}
+  .lb-close{position:absolute;top:-46px;right:-4px;width:36px;height:36px;border:none;border-radius:50%;
+    background:rgba(255,255,255,.14);color:#fff;font-size:20px;cursor:pointer;line-height:1;padding:0}
+  .lb-close:hover{background:rgba(255,255,255,.26)}
+  .lb-cap{color:#e8d9b8;font-size:14px;letter-spacing:1px;margin-top:16px;line-height:1.5;text-align:center}
+  .lb-cap b{color:#ffd777}
+  .lb-hint{color:#8b93a8;font-size:12px;margin-top:4px;letter-spacing:2px}
+  @media (max-width:560px){.lb-card{width:min(88vw,calc(66vh*0.75))}}
 </style>
 </head>
 <body>
@@ -813,6 +832,51 @@ chips.addEventListener('click',e=>{
     cell.style.display=(r==='ALL'||cell.dataset.r===r)?'':'none';
   });
 });
+
+/* ===== 大图预览（lightbox）===== */
+(function(){
+  const lb=document.getElementById('lb');
+  const stage=document.getElementById('lbStage');
+  const cap=document.getElementById('lbCap');
+  function open(card,key){
+    stage.innerHTML='';
+    const scene=document.createElement('div');scene.className='lb-scene';
+    const c=card.cloneNode(true);c.classList.add('lb-card');
+    scene.appendChild(c);stage.appendChild(scene);
+    const f=FOODS.find(x=>x.key===key);
+    const r=(c.querySelector('.rarity')||{}).textContent||'';
+    cap.innerHTML=f?`<b>${f.name}</b> <span style="opacity:.72">· ${f.pinyin} · ${r}</span>`:'';
+    lb.hidden=false;document.body.style.overflow='hidden';
+  }
+  function close(){lb.hidden=true;stage.innerHTML='';document.body.style.overflow=''}
+  document.addEventListener('click',e=>{
+    if(!lb.hidden){ if(e.target.closest('.lb-close')||e.target.classList.contains('lb-mask')||e.target.closest('.lb-cap'))close(); return; }
+    const card=e.target.closest('.cell .card'); if(!card)return;
+    const cell=card.closest('.cell'); if(!cell)return;
+    open(card,cell.dataset.key);
+  });
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!lb.hidden)close()});
+  stage.addEventListener('pointermove',e=>{
+    const c=stage.querySelector('.lb-card');if(!c)return;
+    const r=c.getBoundingClientRect();
+    const px=(e.clientX-r.left)/r.width,py=(e.clientY-r.top)/r.height;
+    c.style.setProperty('--mx',(px*100).toFixed(1)+'%');c.style.setProperty('--my',(py*100).toFixed(1)+'%');
+    c.style.setProperty('--ry',((px-0.5)*16).toFixed(1)+'deg');c.style.setProperty('--rx',((0.5-py)*16).toFixed(1)+'deg');
+  });
+  stage.addEventListener('pointerleave',()=>{
+    const c=stage.querySelector('.lb-card');
+    if(c){c.style.setProperty('--rx','0deg');c.style.setProperty('--ry','0deg');c.style.setProperty('--mx','50%');c.style.setProperty('--my','50%')}
+  });
+})();
 </script>
+<div class="lb" id="lb" hidden>
+  <div class="lb-mask"></div>
+  <div class="lb-box">
+    <button class="lb-close" type="button" title="关闭（Esc）">&times;</button>
+    <div class="lb-stage" id="lbStage"></div>
+    <div class="lb-cap" id="lbCap"></div>
+    <div class="lb-hint">点击任意处或按 Esc 关闭</div>
+  </div>
+</div>
 </body>
 </html>
