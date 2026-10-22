@@ -92,6 +92,16 @@
 </style>
 </head>
 <body>
+<div class="lb" id="lb" hidden>
+  <div class="lb-mask"></div>
+  <div class="lb-box">
+    <button class="lb-close" type="button" title="关闭（Esc）">&times;</button>
+    <div class="lb-stage" id="lbStage"></div>
+    <div class="lb-cap" id="lbCap"></div>
+    <div class="lb-hint">点击遮罩、关闭按钮或按 Esc 退出</div>
+  </div>
+</div>
+
 
 <!-- 全卡共享 defs（跨 SVG 引用） -->
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -869,14 +879,5 @@ chips.addEventListener('click',e=>{
   });
 })();
 </script>
-<div class="lb" id="lb" hidden>
-  <div class="lb-mask"></div>
-  <div class="lb-box">
-    <button class="lb-close" type="button" title="关闭（Esc）">&times;</button>
-    <div class="lb-stage" id="lbStage"></div>
-    <div class="lb-cap" id="lbCap"></div>
-    <div class="lb-hint">点击遮罩、关闭按钮或按 Esc 退出</div>
-  </div>
-</div>
 </body>
 </html>
