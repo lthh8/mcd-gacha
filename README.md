@@ -1,8 +1,30 @@
 # 麦门图鉴 · Gacha Collection 🍔🎴
 
-> 基于**麦当劳 MCP** 的创意 Skill：把你的麦门历史订单、积分与优惠券，变成一张**可收集的二次元卡牌图鉴**。抽本命单品、攒欧气值、集齐图鉴，还能一键生成专属**分享报告卡**。
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![GitHub stars](https://img.shields.io/github/stars/lthh8/mcd-gacha?style=social)](https://github.com/lthh8/mcd-gacha)
+[![MCP](https://img.shields.io/badge/MCP-mcd.cn-red.svg)](https://mcp.mcd.cn)
+[![No AI Image Cost](https://img.shields.io/badge/card%20art-100%25%20hand--written%20SVG-blue.svg)](#-技术栈)
+
+> **一句话：麦当劳订单 → 全息闪卡图鉴，一键晒卡。** 16 张可收集闪卡、单抽十连、欧气值本命卡、一键生成分享报告卡 PNG——零 AI 生图成本、零依赖单文件 Demo。
+
+基于**麦当劳 MCP** 的创意 Skill：把你的麦门历史订单、积分与优惠券，变成一张**可收集的全息闪卡图鉴**。抽本命单品、攒欧气值、集齐图鉴，还能一键生成专属**分享报告卡**。
 
 **1024 程序员节 · 麦当劳程序员创意开发大赛参赛作品**（非麦当劳官方产品，粉丝向）
+
+## 🖼 效果预览
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/share-report-1.jpg" alt="分享报告卡 · 麦门老饕 12/16"/></td>
+    <td width="50%"><img src="docs/screenshots/share-report-2.jpg" alt="分享报告卡 · 麦门萌新 8/16"/></td>
+  </tr>
+  <tr>
+    <td align="center"><sub>收集 12/16 ·「麦门老饕」</sub></td>
+    <td align="center"><sub>收集 8/16 ·「麦门萌新」</sub></td>
+  </tr>
+</table>
+
+> 打开 [`index.html`](index.html) 即可体验完整流程（无需 Token）：单抽/十连翻牌 → 图鉴收集 → 一键导出同款报告卡 PNG。16 张闪卡图鉴墙见 [`gallery.html`](gallery.html)。
 
 ---
 
@@ -79,15 +101,16 @@ mcd-gacha/
 ├── mcp-config.example.json   # 脱敏 MCP 配置示例（仅环境变量占位）
 ├── workbuddy.md              # WorkBuddy 开发对话上下文（联动奖励）
 ├── LICENSE                   # MIT
+├── SUBMISSION.md             # 报名 Issue 文案与冲 Star 指南
 ├── index.html                # 可交互 Demo（单抽/十连/图鉴/报告卡，主入口）
 ├── gallery.html              # 16 张闪卡图鉴墙（稀有度筛选）
 ├── flashcard-demo.html       # 单卡工艺演示
-├── skill/
-│   ├── SKILL.md              # 正式 Skill 定义与算法
-│   └── scripts/
-│       └── mcd-mcp-client.mjs  # 麦当劳 MCP 只读客户端（Node 18+ 零依赖）
-└── assets/
-    └── cards/*.png           # 早期 AI 生成卡面样品（已被 SVG 立绘取代，保留作过程存档）
+├── docs/
+│   └── screenshots/          # 分享报告卡截图（README 首屏用）
+└── skill/
+    ├── SKILL.md              # 正式 Skill 定义与算法
+    └── scripts/
+        └── mcd-mcp-client.mjs  # 麦当劳 MCP 只读客户端（Node 18+ 零依赖）
 ```
 
 ## 🏆 参赛信息
