@@ -1,0 +1,1077 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>麦门图鉴 · 抽卡收集 Demo</title>
+<style>
+  :root{
+    --red:#da291c; --yellow:#ffc72c; --ink:#2b2118; --muted:#8a7f70;
+    --SSR:#ff8a00; --SR:#a66bff; --R:#3f9bff; --N:#b6b1a8;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:"PingFang SC","Microsoft YaHei","Hiragino Sans GB",sans-serif;
+    color:var(--ink);
+    background:
+      radial-gradient(circle at 12% 18%, #fff3d6 0, transparent 42%),
+      radial-gradient(circle at 88% 82%, #ffe7e2 0, transparent 40%),
+      #fbf7ef;
+    min-height:100vh; padding:28px 18px 60px;
+  }
+  .wrap{max-width:1000px;margin:0 auto}
+  header{display:flex;align-items:center;gap:14px;margin-bottom:6px}
+  .logo{
+    width:52px;height:52px;border-radius:14px;flex:none;
+    background:linear-gradient(135deg,var(--yellow),#ffb300);
+    display:flex;align-items:center;justify-content:center;font-size:28px;
+    box-shadow:0 6px 16px rgba(255,183,0,.35);
+  }
+  h1{font-size:26px;letter-spacing:.5px}
+  h1 .accent{color:var(--red)}
+  .sub{color:var(--muted);font-size:13px;margin-top:3px}
+  .badges{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 22px}
+  .badge{font-size:12px;padding:5px 11px;border-radius:999px;background:#fff;
+    border:1px solid #eadfc9;color:#6b5f4d;box-shadow:0 1px 2px rgba(0,0,0,.03)}
+  .badge.hot{background:linear-gradient(135deg,#fff0f0,#ffe3e0);border-color:#f3c3bd;color:var(--red);font-weight:600}
+
+  .panel{background:#fff;border:1px solid #f0e7d6;border-radius:20px;padding:22px;
+    box-shadow:0 10px 30px rgba(120,100,60,.07);margin-bottom:22px}
+
+  .drawbar{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:4px}
+  button.btn{cursor:pointer;border:none;font-family:inherit;font-weight:700;
+    border-radius:14px;transition:transform .08s ease, box-shadow .15s ease}
+  button.btn:active{transform:scale(.96)}
+  button.btn:disabled{opacity:.6;cursor:default}
+  .btn-1{background:linear-gradient(135deg,var(--red),#ff4d3d);color:#fff;
+    font-size:16px;padding:14px 26px;box-shadow:0 8px 20px rgba(218,41,28,.32)}
+  .btn-10{background:linear-gradient(135deg,#ffb300,var(--yellow));color:#5a3d00;
+    font-size:16px;padding:14px 26px;box-shadow:0 8px 20px rgba(255,183,0,.35)}
+  .btn-ghost{background:#fff;border:1.5px solid #e6d9bf;color:#7a6b52;font-size:14px;padding:11px 18px}
+  .rate{font-size:12px;color:var(--muted);margin-left:auto}
+
+  /* 舞台 */
+  .stage{display:flex;flex-direction:column;align-items:center;justify-content:center;
+    min-height:400px;margin-top:18px}
+  .stage-hint{color:var(--muted);font-size:14px;text-align:center;max-width:440px;line-height:1.7}
+  .stage-hint .emo{font-size:40px;display:block;margin-bottom:8px}
+  .flavor-line{margin-top:14px;font-size:13px;color:#6b5f4d;text-align:center;
+    background:#fbf6ec;border:1px dashed #e6d9bf;border-radius:10px;padding:8px 14px;max-width:420px}
+
+  /* 卡牌（全息闪卡） */
+  .card{position:relative;width:100%;border-radius:16px;overflow:hidden;flex:none;
+    background:#10162c;border:2px solid #d8b26a;
+    box-shadow:0 10px 24px rgba(90,70,40,.18)}
+  .card svg{display:block;width:100%;height:auto}
+  .card.rar-ssr{border-color:#ffcf5c;box-shadow:0 0 0 3px rgba(255,180,0,.18),0 14px 30px rgba(255,170,0,.28)}
+  .card.rar-sr{border-color:#a66bff;box-shadow:0 0 0 3px rgba(166,107,255,.14)}
+  .card.rar-r{border-color:#5aa9ff}
+  .card.rar-n{border-color:#9aa3b2}
+  /* 镭射：中心遮罩保护图案区（插画哑光、外圈闪） */
+  .holo{position:absolute;inset:0;pointer-events:none;mix-blend-mode:overlay;opacity:.32;
+    background:repeating-linear-gradient(115deg,
+      rgba(255,0,200,.95) 0 5%, rgba(255,120,0,.95) 5% 10%,
+      rgba(255,235,0,.95) 10% 15%, rgba(0,255,130,.95) 15% 20%,
+      rgba(0,200,255,.95) 20% 25%, rgba(160,0,255,.95) 25% 30%, transparent 30% 46%);
+    background-size:230% 230%;filter:blur(2px);animation:holoFlow 5s linear infinite;
+    -webkit-mask-image:radial-gradient(circle at 50% 54%,transparent 40%,#000 85%);
+            mask-image:radial-gradient(circle at 50% 54%,transparent 40%,#000 85%)}
+  @keyframes holoFlow{0%{background-position:0% 50%}100%{background-position:200% 50%}}
+  .sweep{position:absolute;top:-25%;left:-45%;width:34%;height:150%;pointer-events:none;
+    background:linear-gradient(100deg,transparent,rgba(255,255,255,.5),transparent);
+    transform:rotate(14deg);mix-blend-mode:screen;filter:blur(5px);
+    animation:sweep 3.2s ease-in-out infinite;
+    -webkit-mask-image:radial-gradient(circle at 50% 54%,transparent 42%,#000 88%);
+            mask-image:radial-gradient(circle at 50% 54%,transparent 42%,#000 88%)}
+  @keyframes sweep{0%{left:-40%}60%{left:112%}100%{left:112%}}
+  .glare{position:absolute;inset:0;pointer-events:none;mix-blend-mode:soft-light;opacity:.40;
+    background:radial-gradient(circle at var(--mx,50%) var(--my,50%),
+      rgba(255,255,255,.55),rgba(255,255,255,0) 52%)}
+
+  /* 揭晓动画：卡牌在文档流中定尺寸，封面 absolute 覆盖，杜绝塌宽 */
+  .revealwrap{position:relative;width:100%}
+  .revealwrap.single{width:236px;margin:0 auto}
+  .revealwrap .cover{position:absolute;inset:0;z-index:3;border-radius:14px;
+    background:repeating-linear-gradient(45deg,#da291c 0 12px,#b8231a 12px 24px);
+    display:flex;align-items:center;justify-content:center;color:#ffd7a0;
+    font-size:44px;font-weight:900;border:2px solid #b8231a;
+    box-shadow:0 10px 24px rgba(90,70,40,.14);
+    transform-origin:left center;transition:transform .45s ease,opacity .35s ease}
+  .revealwrap.revealed .cover{transform:perspective(700px) rotateY(-96deg);opacity:0}
+  .revealwrap.revealed .card{animation:pop .5s cubic-bezier(.2,.9,.3,1.2)}
+  @keyframes pop{0%{transform:scale(.92)}55%{transform:scale(1.05)}100%{transform:scale(1)}}
+
+  /* 十连结果网格 */
+  .result-grid{display:grid;grid-template-columns:repeat(5,minmax(0,150px));gap:12px;
+    justify-content:center;width:100%;margin-top:6px}
+  @media(max-width:760px){.result-grid{grid-template-columns:repeat(3,minmax(0,150px))}}
+  @media(max-width:480px){.result-grid{grid-template-columns:repeat(2,minmax(0,150px))}}
+
+  /* 图鉴 */
+  .grid{display:grid;grid-template-columns:repeat(4,minmax(0,180px));gap:16px;margin-top:14px;justify-content:center}
+  @media(max-width:760px){.grid{grid-template-columns:repeat(3,minmax(0,180px))}}
+  @media(max-width:520px){.grid{grid-template-columns:repeat(2,minmax(0,180px))}}
+  .cell{position:relative;width:100%}
+  .count-badge{position:absolute;top:8px;left:8px;background:#fff;border:1px solid #e6d9bf;
+    border-radius:999px;font-size:11px;font-weight:700;padding:2px 9px;color:#7a6b52;
+    box-shadow:0 2px 6px rgba(0,0,0,.06);z-index:4}
+  .progress{height:12px;border-radius:8px;background:#efe9db;overflow:hidden;margin:6px 0 4px}
+  .progress i{display:block;height:100%;background:linear-gradient(90deg,var(--yellow),var(--red));width:0;transition:width .4s}
+  .prog-row{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;color:#6b5f4d}
+  .prog-row b{font-size:20px;color:var(--ink)}
+  .luck{font-size:13px;color:#6b5f4d;margin-top:10px;display:flex;gap:18px;flex-wrap:wrap}
+  .luck b{color:var(--red)}
+
+  h2.sec{font-size:17px;margin-bottom:6px;display:flex;align-items:center;gap:8px}
+  h2.sec::before{content:"";width:5px;height:18px;border-radius:3px;background:linear-gradient(180deg,var(--yellow),var(--red))}
+  .note{font-size:12px;color:var(--muted);line-height:1.7;margin-top:12px;
+    background:#fbf6ec;border:1px dashed #e6d9bf;border-radius:10px;padding:10px 12px}
+  footer{text-align:center;color:var(--muted);font-size:12px;margin-top:26px;line-height:1.8}
+  .sr-flash{position:fixed;inset:0;pointer-events:none;z-index:50;opacity:0}
+  .sr-flash.go{animation:flash .9s ease}
+  @keyframes flash{0%{opacity:0}20%{opacity:.9;background:radial-gradient(circle,rgba(255,220,120,.85),transparent 60%)}100%{opacity:0}}
+</style>
+</head>
+<body>
+<div class="sr-flash" id="flash"></div>
+<div class="wrap">
+  <header>
+    <div class="logo">🍔</div>
+    <div>
+      <h1>麦门图鉴 <span class="accent">· 抽卡收集</span></h1>
+      <div class="sub">Gacha Collection Demo · 基于麦当劳 MCP 的创意 Skill</div>
+    </div>
+  </header>
+
+  <div class="badges">
+    <span class="badge hot">1024 程序员节 · 麦当劳创意开发大赛</span>
+    <span class="badge">SSR 5% · SR 15% · R 35% · N 45%</span>
+    <span class="badge">16 张全息闪卡 · 十连保底 R+</span>
+    <span class="badge">纯娱乐图鉴 · 无真实支付</span>
+  </div>
+
+  <!-- 抽卡区 -->
+  <div class="panel">
+    <div class="drawbar">
+      <button class="btn btn-1" id="btn1">单抽 ×1</button>
+      <button class="btn btn-10" id="btn10">十连抽 ×10</button>
+      <button class="btn btn-ghost" id="btnShare">📸 生成分享报告卡</button>
+      <button class="btn btn-ghost" id="btnReset">重置</button>
+      <span class="rate" id="pityInfo">本抽累计：0</span>
+    </div>
+    <div class="stage" id="stage">
+      <div class="stage-hint">
+        <span class="emo">🎰</span>
+        点击「单抽」或「十连抽」开始收集麦门全息闪卡。<br>
+        集齐全部 16 张即可解锁完整图鉴，还能生成你的专属分享报告卡。
+      </div>
+    </div>
+  </div>
+
+  <!-- 图鉴区 -->
+  <div class="panel">
+    <h2 class="sec">麦门图鉴 · 收集进度</h2>
+    <div class="prog-row"><span>已收集 <b id="ownedN">0</b> / 16</span><span id="ownedPct">0%</span></div>
+    <div class="progress"><i id="progBar"></i></div>
+    <div class="luck">
+      <span>总抽卡次数：<b id="statDraws">0</b></span>
+      <span>SSR：<b id="statSSR">0</b></span>
+      <span>SR：<b id="statSR">0</b></span>
+      <span>欧气值：<b id="statLuck">—</b></span>
+    </div>
+    <div class="grid" id="grid"></div>
+    <div class="note">
+      <span id="storageWarn" style="display:none;color:#b4451f">⚠️ 当前环境禁止本地存储（沙箱预览/隐私模式），收集进度仅在本页有效，刷新后重置。直接用浏览器打开 index.html 即可正常存档。</span><br>
+      说明：本页面为「麦门图鉴」Skill 的可交互 Demo（静态模拟，无 Token 也能玩）。正式 Skill 连接麦当劳 MCP
+      (<code>https://mcp.mcd.cn</code>)：读取历史订单/积分/优惠券推算「欧气值」与本命单品，并为图鉴绘制专属卡面。
+    </div>
+  </div>
+
+  <footer>
+    麦门图鉴 · Gacha Collection —— 麦当劳程序员创意开发大赛参赛作品 Demo<br>
+    非麦当劳官方产品 · 餐品与价格以麦当劳官方渠道为准
+  </footer>
+</div>
+
+<script>
+/* ================= 共享 SVG defs（页面内联 + 分享卡导出共用） ================= */
+const DEFS = `
+<radialGradient id="sky" cx="50%" cy="52%" r="75%">
+  <stop offset="0" stop-color="#3d5183"/><stop offset=".45" stop-color="#26325a"/>
+  <stop offset=".78" stop-color="#1a2342"/><stop offset="1" stop-color="#10162c"/>
+</radialGradient>
+<radialGradient id="ctrGlow" cx="50%" cy="50%" r="50%">
+  <stop offset="0" stop-color="#cfe8ff" stop-opacity=".22"/>
+  <stop offset=".55" stop-color="#9fc8ff" stop-opacity=".10"/>
+  <stop offset="1" stop-color="#9fc8ff" stop-opacity="0"/>
+</radialGradient>
+<radialGradient id="vig" cx="50%" cy="52%" r="72%">
+  <stop offset="0" stop-color="#080d1a" stop-opacity="0"/>
+  <stop offset=".62" stop-color="#080d1a" stop-opacity="0"/>
+  <stop offset="1" stop-color="#080d1a" stop-opacity=".62"/>
+</radialGradient>
+<linearGradient id="g-ssr" x1="0" y1="0" x2="1" y2="1">
+  <stop offset="0" stop-color="#ffe27a"/><stop offset=".55" stop-color="#ffb300"/><stop offset="1" stop-color="#ff8f00"/>
+</linearGradient>
+<linearGradient id="g-sr" x1="0" y1="0" x2="1" y2="1">
+  <stop offset="0" stop-color="#b388ff"/><stop offset="1" stop-color="#7c4dff"/>
+</linearGradient>
+<linearGradient id="g-r" x1="0" y1="0" x2="1" y2="1">
+  <stop offset="0" stop-color="#82b1ff"/><stop offset="1" stop-color="#2962ff"/>
+</linearGradient>
+<linearGradient id="g-n" x1="0" y1="0" x2="1" y2="1">
+  <stop offset="0" stop-color="#b0bec5"/><stop offset="1" stop-color="#78909c"/>
+</linearGradient>
+<filter id="soft" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="5"/></filter>
+<filter id="tglow" x="-50%" y="-50%" width="200%" height="200%">
+  <feGaussianBlur stdDeviation="3.2" result="b"/>
+  <feMerge><feMergeNode in="b"/><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+</filter>
+<filter id="wob"><feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="2" result="d"/>
+  <feDisplacementMap in="SourceGraphic" in2="d" scale="3" xChannelSelector="R" yChannelSelector="G"/></filter>
+<filter id="gray"><feColorMatrix type="saturate" values="0"/></filter>
+<clipPath id="glass"><path d="M152,286 L156,396 Q180,404 204,396 L208,286 Z"/></clipPath>
+<path id="ray" d="M180,285 L175,-280 L185,-280 Z" fill="#e8f1ff"/>
+`;
+document.body.insertAdjacentHTML('afterbegin',
+  '<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>'+DEFS+'</defs></svg>');
+
+const RAYS = `<use href="#ray"/><use href="#ray" transform="rotate(22.5 180 285)"/>
+<use href="#ray" transform="rotate(45 180 285)"/><use href="#ray" transform="rotate(67.5 180 285)"/>
+<use href="#ray" transform="rotate(90 180 285)"/><use href="#ray" transform="rotate(112.5 180 285)"/>
+<use href="#ray" transform="rotate(135 180 285)"/><use href="#ray" transform="rotate(157.5 180 285)"/>
+<use href="#ray" transform="rotate(180 180 285)"/><use href="#ray" transform="rotate(202.5 180 285)"/>
+<use href="#ray" transform="rotate(225 180 285)"/><use href="#ray" transform="rotate(247.5 180 285)"/>
+<use href="#ray" transform="rotate(270 180 285)"/><use href="#ray" transform="rotate(292.5 180 285)"/>
+<use href="#ray" transform="rotate(315 180 285)"/><use href="#ray" transform="rotate(337.5 180 285)"/>`;
+
+const STARS = `<g fill="#ffffff">
+<circle cx="38" cy="70" r="1.6" opacity=".8"/><circle cx="72" cy="44" r="1.1" opacity=".5"/>
+<circle cx="110" cy="96" r="1.4" opacity=".65"/><circle cx="300" cy="58" r="1.7" opacity=".85"/>
+<circle cx="324" cy="98" r="1.2" opacity=".55"/><circle cx="284" cy="126" r="1.5" opacity=".7"/>
+<circle cx="60" cy="170" r="1.3" opacity=".6"/><circle cx="332" cy="182" r="1.6" opacity=".75"/>
+<circle cx="44" cy="240" r="1.2" opacity=".5"/><circle cx="30" cy="302" r="1.5" opacity=".65"/>
+<circle cx="318" cy="262" r="1.3" opacity=".6"/><circle cx="334" cy="332" r="1.6" opacity=".7"/>
+<circle cx="58" cy="352" r="1.2" opacity=".55"/><circle cx="86" cy="420" r="1.5" opacity=".65"/>
+<circle cx="300" cy="428" r="1.4" opacity=".7"/><circle cx="256" cy="150" r="1.1" opacity=".45"/>
+<circle cx="128" cy="132" r="1.3" opacity=".55"/><circle cx="200" cy="38" r="1.5" opacity=".7"/>
+<circle cx="170" cy="112" r="1.1" opacity=".5" fill="#cfe4ff"/><circle cx="238" cy="172" r="1.2" opacity=".5" fill="#cfe4ff"/>
+<circle cx="52" cy="120" r="1.2" opacity=".5" fill="#ffe9bd"/><circle cx="312" cy="146" r="1.1" opacity=".5" fill="#ffe9bd"/>
+</g>`;
+
+const SPRINKLES_TOP = `<g>
+<circle cx="52" cy="112" r="3" fill="#ff7043"/><circle cx="86" cy="132" r="2.4" fill="#42a5f5"/>
+<circle cx="308" cy="110" r="3" fill="#ab47bc"/><circle cx="280" cy="130" r="2.4" fill="#66bb6a"/>
+<rect x="104" y="118" width="9" height="3" rx="1.5" fill="#ffca28" transform="rotate(-18 108 119)"/>
+<rect x="250" y="120" width="9" height="3" rx="1.5" fill="#ef5350" transform="rotate(22 254 121)"/>
+<circle cx="118" cy="140" r="2" fill="#26c6da"/><circle cx="242" cy="142" r="2" fill="#ec407a"/>
+</g>`;
+
+const SEAL = `<g transform="translate(180,452)">
+<circle r="19" fill="none" stroke="#ff6f5e" stroke-width="1.6"/>
+<circle r="15.5" fill="none" stroke="#ff6f5e" stroke-width="0.6"/>
+<rect x="-8" y="-7" width="16" height="3.6" rx="1.4" fill="#ff6f5e"/>
+<rect x="-8" y="-1.6" width="16" height="2.8" rx="1.1" fill="#ff6f5e"/>
+<rect x="-8" y="2.4" width="16" height="3.6" rx="1.4" fill="#ff6f5e"/>
+<text y="14" text-anchor="middle" font-size="8.5" fill="#ff8a76" font-family="KaiTi,serif">麦门图鉴</text>
+</g>`;
+
+/* ================= 16 张食物立绘（与 gallery.html 同源） ================= */
+
+const ART_BIGMAC = `
+<g filter="url(#wob)">
+  <ellipse cx="180" cy="424" rx="98" ry="10" fill="#070c18" opacity=".42" filter="url(#soft)"/>
+  <path d="M98,384 h164 v14 q0,16 -16,16 h-132 q-16,0 -16,-16 z" fill="#e3ab5e"/>
+  <path d="M98,384 h164 v6 h-164 z" fill="#eebd77"/>
+  <path d="M86,366 q14,-13 28,0 q14,13 28,0 q14,-13 28,0 q14,13 28,0 q14,-13 28,0 q14,13 28,0 q14,-13 28,0 q6,11 -14,15 h-140 q-20,-4 -14,-15 z" fill="#8fce6a"/>
+  <path d="M94,350 h172 l-12,18 h-148 z" fill="#ffc94d"/>
+  <path d="M106,368 q6,9 2,15 M160,368 q6,9 2,15 M214,368 q6,9 2,15" stroke="#ffc94d" stroke-width="5" fill="none" stroke-linecap="round"/>
+  <rect x="92" y="320" width="176" height="30" rx="14" fill="#7c4a2b"/>
+  <g stroke="#5c3520" stroke-width="2.6" opacity=".5">
+    <path d="M106,328 l16,12 M140,324 l16,12 M174,326 l16,12 M208,324 l16,12 M242,328 l14,12"/>
+  </g>
+  <path d="M96,294 h168 v14 q0,10 -10,10 h-148 q-10,0 -10,-10 z" fill="#e8b668"/>
+  <ellipse cx="180" cy="294" rx="84" ry="7" fill="#f0c98d"/>
+  <rect x="92" y="262" width="176" height="30" rx="14" fill="#8a5330"/>
+  <g stroke="#5c3520" stroke-width="2.6" opacity=".5">
+    <path d="M106,270 l16,12 M140,266 l16,12 M174,268 l16,12 M208,266 l16,12 M242,270 l14,12"/>
+  </g>
+  <path d="M94,246 h172 l-12,18 h-148 z" fill="#ffd24d"/>
+  <path d="M102,240 q14,9 28,0 q14,9 28,0 q14,9 28,0 q14,9 28,0 q14,9 28,0 q14,9 28,0" stroke="#ff9a3d" stroke-width="7" fill="none" stroke-linecap="round"/>
+  <path d="M86,232 q14,-13 28,0 q14,13 28,0 q14,-13 28,0 q14,13 28,0 q14,-13 28,0 q14,13 28,0 q14,-13 28,0 q6,11 -14,15 h-140 q-20,-4 -14,-15 z" fill="#9ad876"/>
+  <path d="M90,224 q6,-74 90,-74 q84,0 90,74 z" fill="#f0c273"/>
+  <ellipse cx="180" cy="152" rx="90" ry="13" fill="#f5cf8e"/>
+  <g fill="#fff8e1">
+    <ellipse cx="150" cy="170" rx="5" ry="2.6" transform="rotate(-14 150 170)"/>
+    <ellipse cx="212" cy="166" rx="5" ry="2.6" transform="rotate(12 212 166)"/>
+    <ellipse cx="180" cy="186" rx="5" ry="2.6"/>
+    <ellipse cx="134" cy="190" rx="5" ry="2.6" transform="rotate(-22 134 190)"/>
+    <ellipse cx="226" cy="186" rx="5" ry="2.6" transform="rotate(18 226 186)"/>
+    <ellipse cx="158" cy="208" rx="5" ry="2.6"/>
+    <ellipse cx="204" cy="206" rx="5" ry="2.6" transform="rotate(-6 204 206)"/>
+    <ellipse cx="180" cy="220" rx="5" ry="2.6"/>
+  </g>
+</g>
+<g stroke-width="1.2" fill="none">
+  <path d="M278,178 L286,178" stroke="#f5cf8e"/><path d="M278,250 L286,250" stroke="#ff9a3d"/>
+  <path d="M278,308 L286,308" stroke="#a5633a"/><path d="M278,398 L286,398" stroke="#e3ab5e"/>
+  <path d="M82,234 L68,234" stroke="#9ad876"/><path d="M82,258 L68,258" stroke="#ffd24d"/>
+</g>
+<g class="lbl">
+  <circle cx="275" cy="178" r="3.2" fill="#f5cf8e" stroke="none"/><text x="290" y="182" fill="#ffe3ad">芝麻面包</text>
+  <circle cx="275" cy="250" r="3.2" fill="#ff9a3d" stroke="none"/><text x="290" y="254" fill="#ffcf9a">特制酱</text>
+  <circle cx="275" cy="308" r="3.2" fill="#a5633a" stroke="none"/><text x="290" y="312" fill="#e8b48c">双层牛肉饼</text>
+  <circle cx="275" cy="398" r="3.2" fill="#e3ab5e" stroke="none"/><text x="290" y="402" fill="#f0c98d">松软底包</text>
+  <circle cx="85" cy="234" r="3.2" fill="#9ad876" stroke="none"/><text x="62" y="238" text-anchor="end" fill="#b7e3a0">爽脆生菜</text>
+  <circle cx="85" cy="258" r="3.2" fill="#ffd24d" stroke="none"/><text x="62" y="262" text-anchor="end" fill="#ffe08a">车打吉士</text>
+</g>`;
+
+const ART_MCFLURRY = `
+<g transform="translate(180,278) scale(1.5) translate(-180,-300)" filter="url(#wob)">
+  <path d="M152,286 L156,396 Q180,404 204,396 L208,286 Z" fill="#ffffff" opacity=".3"/>
+  <g clip-path="url(#glass)">
+    <rect x="140" y="284" width="120" height="30" fill="#dff1fb"/>
+    <rect x="140" y="314" width="120" height="20" fill="#fff3d6"/>
+    <rect x="140" y="334" width="120" height="20" fill="#f7a8c6"/>
+    <rect x="140" y="354" width="120" height="20" fill="#a8d98a"/>
+    <rect x="140" y="374" width="120" height="30" fill="#9c6b4a"/>
+  </g>
+  <g stroke="#ffffff" stroke-width="1.6" fill="none" opacity=".8">
+    <path d="M153,314 q9,-4 18,0 t18,0 t18,0"/>
+    <path d="M153,334 q9,-4 18,0 t18,0 t18,0"/>
+    <path d="M153,354 q9,-4 18,0 t18,0 t18,0"/>
+    <path d="M153,374 q9,-4 18,0 t18,0 t18,0"/>
+  </g>
+  <ellipse cx="180" cy="286" rx="28" ry="6" fill="#ffffff" opacity=".55"/>
+  <path d="M152,286 L156,396 Q180,404 204,396 L208,286" fill="none" stroke="#d7e2f2" stroke-width="2"/>
+  <path d="M160,292 Q158,344 166,392" fill="none" stroke="#ffffff" stroke-width="3" opacity=".5"/>
+  <ellipse cx="180" cy="280" rx="30" ry="13" fill="#fffdf6" stroke="#e6d8bb" stroke-width="1"/>
+  <ellipse cx="171" cy="260" rx="26" ry="12" fill="#fffdf6" stroke="#e6d8bb" stroke-width="1"/>
+  <ellipse cx="189" cy="242" rx="22" ry="10" fill="#fffdf6" stroke="#e6d8bb" stroke-width="1"/>
+  <ellipse cx="178" cy="226" rx="17" ry="8"  fill="#fffdf6" stroke="#e6d8bb" stroke-width="1"/>
+  <ellipse cx="187" cy="214" rx="11" ry="6"  fill="#fffdf6" stroke="#e6d8bb" stroke-width="1"/>
+  <path d="M156,280 q24,-8 48,0" fill="none" stroke="#eccfa0" stroke-width="1"/>
+  <path d="M150,260 q24,-8 44,0" fill="none" stroke="#eccfa0" stroke-width="1"/>
+  <g>
+    <circle cx="160" cy="240" r="10" fill="#ef5350"/>
+    <path d="M160,230 l-8,-4 M160,230 l8,-4 M160,230 l0,-7" stroke="#43a047" stroke-width="2.4" fill="none"/>
+    <circle cx="203" cy="234" r="5" fill="#4a5c9a"/><circle cx="212" cy="246" r="4" fill="#3f51b5"/>
+    <rect x="150" y="252" width="8" height="2.6" rx="1.3" fill="#ff7043" transform="rotate(-20 154 253)"/>
+    <rect x="196" y="258" width="8" height="2.6" rx="1.3" fill="#42a5f5" transform="rotate(25 200 259)"/>
+    <rect x="172" y="266" width="8" height="2.6" rx="1.3" fill="#ffee58" transform="rotate(-8 176 267)"/>
+    <rect x="205" y="200" width="7" height="42" rx="3" fill="#e9c781" transform="rotate(18 208 221)"/>
+    <path d="M186,206 q14,-12 26,-2 q-12,10 -26,2 z" fill="#66bb6a"/>
+  </g>
+</g>
+<g stroke-width="1.2" fill="none">
+  <path d="M224,276 L264,276" stroke="#4fc3f7"/><path d="M224,344 L264,344" stroke="#ec407a"/>
+  <path d="M224,412 L264,412" stroke="#a1887f"/><path d="M136,314 L96,314" stroke="#ffca28"/>
+  <path d="M136,374 L96,374" stroke="#9ccc65"/>
+</g>
+<g class="lbl">
+  <circle cx="221" cy="276" r="3.2" fill="#29b6f6" stroke="none"/><text x="268" y="280" fill="#a5e6ff">冰沙</text>
+  <circle cx="221" cy="344" r="3.2" fill="#ec407a" stroke="none"/><text x="268" y="348" fill="#ffb3d9">草莓酱</text>
+  <circle cx="221" cy="412" r="3.2" fill="#c9a06b" stroke="none"/><text x="268" y="416" fill="#e8c39a">巧克力</text>
+  <circle cx="139" cy="314" r="3.2" fill="#ffca28" stroke="none"/><text x="92" y="318" text-anchor="end" fill="#ffe6ad">奶盖</text>
+  <circle cx="139" cy="374" r="3.2" fill="#9ccc65" stroke="none"/><text x="92" y="378" text-anchor="end" fill="#c8ecab">抹茶</text>
+</g>`;
+
+const ART_ANGUS = `
+<g filter="url(#wob)">
+  <ellipse cx="180" cy="424" rx="98" ry="10" fill="#070c18" opacity=".42" filter="url(#soft)"/>
+  <path d="M98,388 h164 v12 q0,16 -16,16 h-132 q-16,0 -16,-16 z" fill="#e3ab5e"/>
+  <path d="M92,368 q18,-10 36,0 q18,10 36,0 q18,-10 36,0" stroke="#c65b3c" stroke-width="13" fill="none" stroke-linecap="round"/>
+  <path d="M92,386 q18,-10 36,0 q18,10 36,0 q18,-10 36,0" stroke="#b04e32" stroke-width="13" fill="none" stroke-linecap="round"/>
+  <rect x="88" y="312" width="184" height="56" rx="20" fill="#6f4225"/>
+  <g stroke="#4e2c16" stroke-width="3" opacity=".55">
+    <path d="M102,326 l16,12 M128,322 l16,12 M154,324 l16,12 M180,322 l16,12 M206,324 l16,12 M232,322 l16,12"/>
+  </g>
+  <path d="M90,292 h180 l-14,22 h-152 z" fill="#ffc94d"/>
+  <path d="M104,314 q7,10 2,16 M160,314 q7,10 2,16 M216,314 q7,10 2,16" stroke="#ffc94d" stroke-width="5.5" fill="none" stroke-linecap="round"/>
+  <circle cx="148" cy="284" r="16" fill="#ef5350"/><circle cx="148" cy="284" r="10" fill="#f8a5a2"/>
+  <circle cx="214" cy="284" r="16" fill="#ef5350"/><circle cx="214" cy="284" r="10" fill="#f8a5a2"/>
+  <path d="M84,270 q14,-13 28,0 q14,13 28,0 q14,-13 28,0 q14,13 28,0 q14,-13 28,0 q14,13 28,0 q14,-13 28,0 q6,11 -14,15 h-140 q-20,-4 -14,-15 z" fill="#8fce6a"/>
+  <path d="M90,258 q6,-76 90,-76 q84,0 90,76 z" fill="#f0c273"/>
+  <ellipse cx="180" cy="186" rx="90" ry="13" fill="#f5cf8e"/>
+  <g fill="#fff8e1">
+    <ellipse cx="150" cy="204" rx="5" ry="2.6" transform="rotate(-14 150 204)"/>
+    <ellipse cx="212" cy="200" rx="5" ry="2.6" transform="rotate(12 212 200)"/>
+    <ellipse cx="180" cy="220" rx="5" ry="2.6"/>
+    <ellipse cx="134" cy="224" rx="5" ry="2.6" transform="rotate(-22 134 224)"/>
+    <ellipse cx="226" cy="220" rx="5" ry="2.6" transform="rotate(18 226 220)"/>
+    <ellipse cx="158" cy="242" rx="5" ry="2.6"/>
+    <ellipse cx="204" cy="240" rx="5" ry="2.6" transform="rotate(-6 204 240)"/>
+    <ellipse cx="180" cy="252" rx="5" ry="2.6"/>
+  </g>
+</g>
+<g stroke-width="1.2" fill="none">
+  <path d="M278,200 L286,200" stroke="#f5cf8e"/><path d="M278,340 L286,340" stroke="#a5633a"/>
+  <path d="M278,376 L286,376" stroke="#c65b3c"/><path d="M82,280 L68,280" stroke="#8fce6a"/>
+  <path d="M82,306 L68,306" stroke="#ffc94d"/>
+</g>
+<g class="lbl">
+  <circle cx="275" cy="200" r="3.2" fill="#f5cf8e" stroke="none"/><text x="290" y="204" fill="#ffe3ad">芝麻面包</text>
+  <circle cx="275" cy="340" r="3.2" fill="#a5633a" stroke="none"/><text x="290" y="344" fill="#e8b48c">厚切安格斯</text>
+  <circle cx="275" cy="376" r="3.2" fill="#c65b3c" stroke="none"/><text x="290" y="380" fill="#f0a58c">培根</text>
+  <circle cx="85" cy="280" r="3.2" fill="#8fce6a" stroke="none"/><text x="62" y="284" text-anchor="end" fill="#b7e3a0">番茄生菜</text>
+  <circle cx="85" cy="306" r="3.2" fill="#ffc94d" stroke="none"/><text x="62" y="310" text-anchor="end" fill="#ffe08a">车打吉士</text>
+</g>`;
+
+const ART_SPICY = `
+<g filter="url(#wob)">
+  <ellipse cx="180" cy="424" rx="96" ry="10" fill="#070c18" opacity=".42" filter="url(#soft)"/>
+  <path d="M100,384 h160 v14 q0,15 -15,15 h-130 q-15,0 -15,-15 z" fill="#e3ab5e"/>
+  <path d="M104,374 q14,8 30,5 q18,-3 30,5" stroke="#fff8ec" stroke-width="6" fill="none" stroke-linecap="round"/>
+  <path d="M96,296 q10,-26 40,-30 q30,-4 46,14 q20,22 8,42 q-12,18 -44,18 q-38,0 -50,-20 q-10,-18 0,-24 z" fill="#d84315"/>
+  <g fill="#e64a19">
+    <circle cx="104" cy="316" r="9"/><circle cx="112" cy="294" r="9"/><circle cx="138" cy="282" r="9"/>
+    <circle cx="170" cy="278" r="9"/><circle cx="200" cy="286" r="9"/><circle cx="218" cy="304" r="9"/>
+    <circle cx="224" cy="328" r="9"/><circle cx="212" cy="350" r="9"/><circle cx="186" cy="362" r="9"/>
+    <circle cx="158" cy="364" r="9"/><circle cx="130" cy="356" r="9"/><circle cx="112" cy="338" r="9"/>
+    <circle cx="150" cy="308" r="9"/><circle cx="184" cy="302" r="9"/><circle cx="180" cy="334" r="9"/>
+    <circle cx="146" cy="334" r="9"/>
+  </g>
+  <g fill="#ff8a3d"><circle cx="130" cy="314" r="3.4"/><circle cx="164" cy="306" r="3.4"/>
+    <circle cx="196" cy="320" r="3.4"/><circle cx="160" cy="340" r="3.4"/><circle cx="196" cy="344" r="3.4"/></g>
+  <path d="M90,268 q14,-13 28,0 q14,13 28,0 q14,-13 28,0 q14,13 28,0 q14,-13 28,0 q14,13 28,0 q14,-13 28,0 q6,11 -14,15 h-140 q-20,-4 -14,-15 z" fill="#a5d96b"/>
+  <path d="M94,258 q6,-74 86,-74 q80,0 86,74 z" fill="#eec278"/>
+  <ellipse cx="180" cy="188" rx="86" ry="13" fill="#f4cd90"/>
+  <path d="M148,200 q32,-13 64,0" stroke="#ffffff" stroke-width="2.6" opacity=".35" fill="none"/>
+</g>
+<g stroke-width="1.2" fill="none">
+  <path d="M278,330 L286,330" stroke="#e64a19"/><path d="M278,196 L286,196" stroke="#eec278"/>
+  <path d="M82,380 L68,380" stroke="#fff8ec"/><path d="M82,280 L68,280" stroke="#a5d96b"/>
+</g>
+<g class="lbl">
+  <circle cx="275" cy="330" r="3.2" fill="#e64a19" stroke="none"/><text x="290" y="334" fill="#ff9a70">酥脆鸡排</text>
+  <circle cx="275" cy="196" r="3.2" fill="#eec278" stroke="none"/><text x="290" y="200" fill="#f4cd90">面包顶</text>
+  <circle cx="85" cy="380" r="3.2" fill="#fff8ec" stroke="none"/><text x="62" y="384" text-anchor="end" fill="#ffffff">沙拉酱</text>
+  <circle cx="85" cy="280" r="3.2" fill="#a5d96b" stroke="none"/><text x="62" y="284" text-anchor="end" fill="#c8ecab">爽脆生菜</text>
+</g>`;
+
+const ART_FRIES = `
+<g filter="url(#wob)">
+  <ellipse cx="180" cy="440" rx="74" ry="9" fill="#070c18" opacity=".42" filter="url(#soft)"/>
+  <rect x="122" y="176" width="15" height="156" rx="7" fill="#f2c14e" transform="rotate(-15 129 330)"/>
+  <rect x="140" y="146" width="15" height="186" rx="7" fill="#f6c95e" transform="rotate(-8 147 330)"/>
+  <rect x="158" y="124" width="15" height="208" rx="7" fill="#f2c14e" transform="rotate(-2 165 330)"/>
+  <rect x="176" y="132" width="15" height="200" rx="7" fill="#eeb944" transform="rotate(5 183 330)"/>
+  <rect x="194" y="154" width="15" height="178" rx="7" fill="#f2c14e" transform="rotate(11 201 330)"/>
+  <rect x="212" y="182" width="15" height="150" rx="7" fill="#e8b03c" transform="rotate(16 219 330)"/>
+  <g fill="#ffffff" opacity=".75">
+    <circle cx="130" cy="206" r="2"/><circle cx="158" cy="186" r="2"/><circle cx="186" cy="196" r="2"/>
+    <circle cx="206" cy="212" r="2"/><circle cx="172" cy="236" r="2"/>
+  </g>
+  <path d="M116,330 h128 l-14,104 h-100 z" fill="#d7263d"/>
+  <path d="M116,330 h128 l-4,18 h-120 z" fill="#e63946"/>
+  <g stroke="#ffffff" stroke-width="7" fill="none" stroke-linecap="round" opacity=".95">
+    <path d="M136,378 q40,-20 80,0"/>
+    <path d="M140,406 q36,-17 72,0"/>
+  </g>
+  <path d="M116,330 l-11,-15 l15,-4 l8,15 z" fill="#b71c2c"/>
+  <path d="M244,330 l11,-15 l-15,-4 l-8,15 z" fill="#b71c2c"/>
+</g>
+<g stroke-width="1.2" fill="none">
+  <path d="M256,214 L264,214" stroke="#f2c14e"/><path d="M256,398 L264,398" stroke="#d7263d"/>
+  <path d="M104,244 L96,244" stroke="#ffffff"/>
+</g>
+<g class="lbl">
+  <circle cx="253" cy="214" r="3.2" fill="#f2c14e" stroke="none"/><text x="268" y="218" fill="#ffd98a">金黄薯条</text>
+  <circle cx="253" cy="398" r="3.2" fill="#d7263d" stroke="none"/><text x="268" y="402" fill="#ff8a80">经典红盒</text>
+  <circle cx="107" cy="244" r="3.2" fill="#ffffff" stroke="none"/><text x="92" y="248" text-anchor="end" fill="#ffffff">海盐粒</text>
+</g>`;
+
+const ART_GRILLED = `
+<g filter="url(#wob)">
+  <ellipse cx="180" cy="424" rx="94" ry="10" fill="#070c18" opacity=".42" filter="url(#soft)"/>
+  <path d="M102,384 h156 v14 q0,15 -15,15 h-126 q-15,0 -15,-15 z" fill="#e3ab5e"/>
+  <path d="M106,374 q14,8 28,5 q16,-3 28,5" stroke="#f6ecd9" stroke-width="6" fill="none" stroke-linecap="round"/>
+  <path d="M100,300 q8,-24 36,-27 q28,-3 44,12 q18,20 6,38 q-12,16 -42,16 q-36,0 -44,-18 q-8,-15 0,-21 z" fill="#c68a4e"/>
+  <g stroke="#6d4423" stroke-width="4" fill="none" stroke-linecap="round" opacity=".8">
+    <path d="M114,312 l20,-12 M140,324 l20,-12 M168,334 l20,-12"/>
+  </g>
+  <g fill="#3e2723"><circle cx="126" cy="294" r="3"/><circle cx="162" cy="288" r="3"/>
+    <circle cx="196" cy="300" r="3"/><circle cx="148" cy="312" r="3"/><circle cx="180" cy="318" r="3"/></g>
+  <path d="M94,272 q14,-13 28,0 q14,13 28,0 q14,-13 28,0 q14,13 28,0 q14,-13 28,0 q14,13 28,0 q14,-13 28,0 q6,11 -14,15 h-140 q-20,-4 -14,-15 z" fill="#8fce6a"/>
+  <path d="M98,260 q6,-72 82,-72 q76,0 82,72 z" fill="#eec278"/>
+  <ellipse cx="180" cy="192" rx="82" ry="13" fill="#f4cd90"/>
+  <path d="M150,204 q30,-12 60,0" stroke="#ffffff" stroke-width="2.6" opacity=".35" fill="none"/>
+</g>
+<g stroke-width="1.2" fill="none">
+  <path d="M278,326 L286,326" stroke="#c68a4e"/><path d="M278,200 L286,200" stroke="#eec278"/>
+  <path d="M82,380 L68,380" stroke="#4e342e"/><path d="M82,282 L68,282" stroke="#8fce6a"/>
+</g>
+<g class="lbl">
+  <circle cx="275" cy="326" r="3.2" fill="#c68a4e" stroke="none"/><text x="290" y="330" fill="#e8b48c">炭烤鸡腿肉</text>
+  <circle cx="275" cy="200" r="3.2" fill="#eec278" stroke="none"/><text x="290" y="204" fill="#f4cd90">面包顶</text>
+  <circle cx="85" cy="380" r="3.2" fill="#4e342e" stroke="none"/><text x="62" y="384" text-anchor="end" fill="#a1887f">黑椒酱</text>
+  <circle cx="85" cy="282" r="3.2" fill="#8fce6a" stroke="none"/><text x="62" y="286" text-anchor="end" fill="#b7e3a0">爽脆生菜</text>
+</g>`;
+
+const ART_DOUBLE = `
+<g filter="url(#wob)">
+  <ellipse cx="180" cy="418" rx="88" ry="9" fill="#070c18" opacity=".42" filter="url(#soft)"/>
+  <path d="M106,386 h148 v12 q0,14 -14,14 h-120 q-14,0 -14,-14 z" fill="#e3ab5e"/>
+  <circle cx="140" cy="374" r="8" fill="#7cb342"/><circle cx="222" cy="374" r="8" fill="#7cb342"/>
+  <path d="M112,358 q14,8 28,0 q14,8 28,0 q14,8 28,0 q14,8 28,0 q14,8 28,0" stroke="#e53935" stroke-width="6" fill="none" stroke-linecap="round"/>
+  <path d="M108,342 h144 l-10,16 h-124 z" fill="#ffd24d"/>
+  <rect x="104" y="310" width="152" height="30" rx="14" fill="#7c4a2b"/>
+  <g stroke="#5c3520" stroke-width="2.6" opacity=".5">
+    <path d="M118,318 l14,12 M150,314 l14,12 M182,316 l14,12 M214,314 l14,12"/>
+  </g>
+  <path d="M108,292 h144 l-10,16 h-124 z" fill="#ffc94d"/>
+  <rect x="104" y="260" width="152" height="30" rx="14" fill="#8a5330"/>
+  <g stroke="#5c3520" stroke-width="2.6" opacity=".5">
+    <path d="M118,268 l14,12 M150,264 l14,12 M182,266 l14,12 M214,264 l14,12"/>
+  </g>
+  <path d="M116,248 q14,8 28,0 q14,8 28,0 q14,8 28,0 q14,8 28,0 q14,8 28,0" stroke="#ff9a3d" stroke-width="6.5" fill="none" stroke-linecap="round"/>
+  <path d="M108,240 q6,-62 72,-62 q66,0 72,62 z" fill="#f0c273"/>
+  <ellipse cx="180" cy="184" rx="72" ry="11" fill="#f5cf8e"/>
+  <g fill="#fff8e1">
+    <ellipse cx="158" cy="200" rx="4.4" ry="2.3"/><ellipse cx="202" cy="196" rx="4.4" ry="2.3"/>
+    <ellipse cx="180" cy="214" rx="4.4" ry="2.3"/><ellipse cx="142" cy="218" rx="4.4" ry="2.3"/>
+    <ellipse cx="216" cy="214" rx="4.4" ry="2.3"/>
+  </g>
+</g>
+<g stroke-width="1.2" fill="none">
+  <path d="M278,300 L286,300" stroke="#ffd24d"/><path d="M278,330 L286,330" stroke="#a5633a"/>
+  <path d="M82,376 L68,376" stroke="#7cb342"/>
+</g>
+<g class="lbl">
+  <circle cx="275" cy="300" r="3.2" fill="#ffd24d" stroke="none"/><text x="290" y="304" fill="#ffe08a">双份吉士</text>
+  <circle cx="275" cy="330" r="3.2" fill="#a5633a" stroke="none"/><text x="290" y="334" fill="#e8b48c">双层牛肉饼</text>
+  <circle cx="85" cy="376" r="3.2" fill="#7cb342" stroke="none"/><text x="62" y="380" text-anchor="end" fill="#b7e3a0">酸黄瓜</text>
+</g>`;
+
+const ART_COKE = `
+<g filter="url(#wob)">
+  <ellipse cx="180" cy="436" rx="64" ry="9" fill="#070c18" opacity=".42" filter="url(#soft)"/>
+  <rect x="146" y="298" width="26" height="26" rx="5" fill="#ffffff" opacity=".55" transform="rotate(-12 159 311)"/>
+  <rect x="186" y="308" width="24" height="24" rx="5" fill="#ffffff" opacity=".5" transform="rotate(14 198 320)"/>
+  <path d="M120,318 h120 l-18,112 h-84 z" fill="#d7263d"/>
+  <path d="M120,318 h120 l-4,16 h-112 z" fill="#e63946"/>
+  <g stroke="#ffffff" stroke-width="7" fill="none" stroke-linecap="round" opacity=".95">
+    <path d="M136,366 q40,-20 80,0"/>
+    <path d="M140,398 q36,-17 72,0"/>
+  </g>
+  <path d="M126,324 q54,-10 108,0" stroke="#ff8a80" stroke-width="2.6" opacity=".6" fill="none"/>
+  <ellipse cx="180" cy="316" rx="62" ry="12" fill="#b71c2c"/>
+  <ellipse cx="180" cy="312" rx="56" ry="9" fill="#e63946"/>
+  <rect x="210" y="208" width="17" height="112" rx="8" fill="#d7263d" transform="rotate(11 218 318)"/>
+  <g fill="#ffffff" transform="rotate(11 218 318)">
+    <rect x="210" y="228" width="17" height="9" rx="4"/><rect x="210" y="252" width="17" height="9" rx="4"/>
+    <rect x="210" y="276" width="17" height="9" rx="4"/>
+  </g>
+</g>
+<g stroke-width="1.2" fill="none">
+  <path d="M246,372 L264,372" stroke="#d7263d"/><path d="M246,288 L264,288" stroke="#ffffff"/>
+  <path d="M116,392 L96,392" stroke="#ff8a80"/>
+</g>
+<g class="lbl">
+  <circle cx="243" cy="372" r="3.2" fill="#d7263d" stroke="none"/><text x="268" y="376" fill="#ff8a80">冰爽可乐</text>
+  <circle cx="243" cy="288" r="3.2" fill="#ffffff" stroke="none"/><text x="268" y="292" fill="#ffffff">气泡冰块</text>
+  <circle cx="119" cy="392" r="3.2" fill="#ff8a80" stroke="none"/><text x="92" y="396" text-anchor="end" fill="#ff8a80">经典红杯</text>
+</g>`;
+
+const ART_NUGGETS = `
+<g filter="url(#wob)">
+  <ellipse cx="180" cy="440" rx="76" ry="9" fill="#070c18" opacity=".42" filter="url(#soft)"/>
+  <path d="M108,316 h144 v12 l-16,108 h-112 l-16,-108 z" fill="#d7263d"/>
+  <path d="M108,316 h144 v9 h-144 z" fill="#e63946"/>
+  <g stroke="#ffffff" stroke-width="7" fill="none" stroke-linecap="round" opacity=".95">
+    <path d="M130,362 q42,-21 84,0"/>
+    <path d="M134,394 q38,-18 76,0"/>
+  </g>
+  <g>
+    <path d="M116,296 q4,-30 30,-30 q27,0 30,27 q4,25 -26,27 q-35,4 -34,-24 z" fill="#e8a84c"/>
+    <path d="M156,262 q4,-30 30,-30 q27,0 30,27 q4,25 -26,27 q-35,4 -34,-24 z" fill="#f0b85c"/>
+    <path d="M198,288 q4,-30 30,-30 q27,0 30,27 q4,25 -26,27 q-35,4 -34,-24 z" fill="#e8a84c"/>
+    <path d="M132,256 q4,-26 26,-26 q23,0 26,23 q4,22 -23,23 q-30,3 -29,-20 z" fill="#f0b85c"/>
+    <path d="M176,250 q4,-26 26,-26 q23,0 26,23 q4,22 -23,23 q-30,3 -29,-20 z" fill="#e8a84c"/>
+    <path d="M218,258 q4,-26 26,-26 q23,0 26,23 q4,22 -23,23 q-30,3 -29,-20 z" fill="#f0b85c"/>
+  </g>
+  <g fill="#c98a2e">
+    <circle cx="130" cy="280" r="3.4"/><circle cx="176" cy="248" r="3.4"/><circle cx="216" cy="264" r="3.4"/>
+    <circle cx="150" cy="296" r="3.4"/><circle cx="204" cy="302" r="3.4"/><circle cx="240" cy="280" r="3.4"/>
+  </g>
+</g>
+<g stroke-width="1.2" fill="none">
+  <path d="M254,268 L264,268" stroke="#e8a84c"/><path d="M254,306 L264,306" stroke="#f0b85c"/>
+  <path d="M104,378 L96,378" stroke="#d7263d"/>
+</g>
+<g class="lbl">
+  <circle cx="251" cy="268" r="3.2" fill="#e8a84c" stroke="none"/><text x="268" y="272" fill="#ffd98a">金黄鸡块</text>
+  <circle cx="251" cy="306" r="3.2" fill="#f0b85c" stroke="none"/><text x="268" y="310" fill="#ffd98a">酥脆面衣</text>
+  <circle cx="107" cy="378" r="3.2" fill="#d7263d" stroke="none"/><text x="92" y="382" text-anchor="end" fill="#ff8a80">盒装呈现</text>
+</g>`;
+
+const ART_FISH = `
+<g filter="url(#wob)">
+  <ellipse cx="180" cy="420" rx="92" ry="9" fill="#070c18" opacity=".42" filter="url(#soft)"/>
+  <path d="M100,386 h160 v12 q0,14 -14,14 h-132 q-14,0 -14,-14 z" fill="#e3ab5e"/>
+  <path d="M104,376 q14,8 30,5 q18,-3 30,5" stroke="#fff8ec" stroke-width="6" fill="none" stroke-linecap="round"/>
+  <path d="M110,362 q18,-10 34,0 q18,10 34,0 q18,-10 34,0" stroke="#fff8ec" stroke-width="7" fill="none" stroke-linecap="round"/>
+  <path d="M98,302 q8,-22 82,-22 q74,0 82,22 q6,18 -14,24 h-136 q-20,-6 -14,-24 z" fill="#e8d5ac"/>
+  <path d="M104,296 q76,-12 152,0" stroke="#d4bd8e" stroke-width="2.4" fill="none"/>
+  <g fill="#d4bd8e">
+    <circle cx="120" cy="308" r="2.6"/><circle cx="150" cy="314" r="2.6"/><circle cx="180" cy="308" r="2.6"/>
+    <circle cx="210" cy="314" r="2.6"/><circle cx="240" cy="308" r="2.6"/>
+    <circle cx="134" cy="322" r="2.6"/><circle cx="196" cy="322" r="2.6"/><circle cx="226" cy="322" r="2.6"/>
+  </g>
+  <path d="M104,282 h152 l-10,15 h-132 z" fill="#ffc94d"/>
+  <path d="M104,270 q6,-58 76,-58 q70,0 76,58 z" fill="#f0c273"/>
+  <ellipse cx="180" cy="216" rx="76" ry="11" fill="#f5cf8e"/>
+  <g fill="#fff8e1">
+    <ellipse cx="156" cy="234" rx="4.4" ry="2.3"/><ellipse cx="204" cy="230" rx="4.4" ry="2.3"/>
+    <ellipse cx="180" cy="250" rx="4.4" ry="2.3"/><ellipse cx="140" cy="252" rx="4.4" ry="2.3"/>
+    <ellipse cx="220" cy="248" rx="4.4" ry="2.3"/>
+  </g>
+</g>
+<g stroke-width="1.2" fill="none">
+  <path d="M278,312 L286,312" stroke="#e8d5ac"/><path d="M278,220 L286,220" stroke="#f5cf8e"/>
+  <path d="M82,372 L68,372" stroke="#fff8ec"/>
+</g>
+<g class="lbl">
+  <circle cx="275" cy="312" r="3.2" fill="#e8d5ac" stroke="none"/><text x="290" y="316" fill="#f0e0bd">炸鱼排</text>
+  <circle cx="275" cy="220" r="3.2" fill="#f5cf8e" stroke="none"/><text x="290" y="224" fill="#ffe3ad">芝麻面包</text>
+  <circle cx="85" cy="372" r="3.2" fill="#fff8ec" stroke="none"/><text x="62" y="376" text-anchor="end" fill="#ffffff">塔塔酱</text>
+</g>`;
+
+const ART_CONE = `
+<g filter="url(#wob)">
+  <ellipse cx="180" cy="438" rx="46" ry="8" fill="#070c18" opacity=".42" filter="url(#soft)"/>
+  <path d="M144,300 h72 l-28,132 h-16 z" fill="#d9a45b"/>
+  <g stroke="#b9833f" stroke-width="2.2">
+    <path d="M152,316 l22,110 M166,312 l20,118 M180,312 l14,118 M194,316 l8,110"/>
+    <path d="M150,332 l60,0 M152,364 l54,0 M156,398 l44,0"/>
+  </g>
+  <ellipse cx="180" cy="300" rx="38" ry="9" fill="#e8b76a"/>
+  <ellipse cx="180" cy="286" rx="37" ry="15" fill="#fdf3dc"/>
+  <ellipse cx="180" cy="260" rx="31" ry="15" fill="#fdf3dc"/>
+  <ellipse cx="180" cy="234" rx="24" ry="13" fill="#fdf3dc"/>
+  <ellipse cx="180" cy="210" rx="16" ry="9" fill="#fdf3dc"/>
+  <ellipse cx="180" cy="194" rx="10" ry="6" fill="#fdf3dc"/>
+  <path d="M218,278 q11,17 4,31 q-15,-4 -13,-21 z" fill="#fdf3dc"/>
+  <path d="M162,206 q11,17 9,36 q-9,8 -15,-3 q-7,-16 6,-33 z" fill="#e8b76a" opacity=".85"/>
+  <circle cx="180" cy="178" r="11" fill="#e53935"/>
+  <path d="M180,169 q8,-14 17,-17" stroke="#6d4c41" stroke-width="2.6" fill="none"/>
+</g>
+<g stroke-width="1.2" fill="none">
+  <path d="M222,246 L264,246" stroke="#fdf3dc"/><path d="M146,372 L96,372" stroke="#d9a45b"/>
+  <path d="M168,178 L96,178" stroke="#e53935"/>
+</g>
+<g class="lbl">
+  <circle cx="219" cy="246" r="3.2" fill="#fdf3dc" stroke="none"/><text x="268" y="250" fill="#fff6e0">香草旋涡</text>
+  <circle cx="149" cy="372" r="3.2" fill="#d9a45b" stroke="none"/><text x="92" y="376" text-anchor="end" fill="#eec38a">脆皮蛋筒</text>
+  <circle cx="171" cy="178" r="3.2" fill="#e53935" stroke="none"/><text x="92" y="182" text-anchor="end" fill="#ff8a80">樱桃尖</text>
+</g>`;
+
+const ART_MCCAFE = `
+<g filter="url(#wob)">
+  <ellipse cx="180" cy="438" rx="58" ry="9" fill="#070c18" opacity=".42" filter="url(#soft)"/>
+  <path d="M134,288 h92 l-12,144 h-68 z" fill="#f3ead8"/>
+  <path d="M140,334 h80 l-4,36 h-72 z" fill="#6d4c41"/>
+  <path d="M146,304 l-4,124" stroke="#ffffff" stroke-width="4" opacity=".7" fill="none"/>
+  <rect x="128" y="264" width="104" height="24" rx="9" fill="#e9e1d2"/>
+  <ellipse cx="180" cy="264" rx="52" ry="9" fill="#f3ead8"/>
+  <ellipse cx="180" cy="266" rx="12" ry="5" fill="#4e342e"/>
+  <g stroke="#cfd8dc" stroke-width="3.6" fill="none" opacity=".75" stroke-linecap="round">
+    <path d="M156,242 q10,-16 0,-30 q-10,-14 0,-28"/>
+    <path d="M204,244 q10,-16 0,-30 q-10,-14 0,-28"/>
+  </g>
+  <g fill="#6d4c41">
+    <ellipse cx="150" cy="418" rx="10" ry="6" transform="rotate(-16 150 418)"/>
+    <ellipse cx="210" cy="420" rx="10" ry="6" transform="rotate(14 210 420)"/>
+  </g>
+  <g stroke="#4e342e" stroke-width="1.6">
+    <path d="M142,418 q9,-6 18,0"/><path d="M202,420 q9,-6 18,0"/>
+  </g>
+</g>
+<g stroke-width="1.2" fill="none">
+  <path d="M232,356 L264,356" stroke="#6d4c41"/><path d="M232,224 L264,224" stroke="#cfd8dc"/>
+  <path d="M128,296 L96,296" stroke="#f3ead8"/>
+</g>
+<g class="lbl">
+  <circle cx="229" cy="356" r="3.2" fill="#6d4c41" stroke="none"/><text x="268" y="360" fill="#bcaaa4">鲜萃浓缩</text>
+  <circle cx="229" cy="224" r="3.2" fill="#cfd8dc" stroke="none"/><text x="268" y="228" fill="#eceff1">热饮暖气</text>
+  <circle cx="131" cy="296" r="3.2" fill="#f3ead8" stroke="none"/><text x="92" y="300" text-anchor="end" fill="#f3ead8">绵密奶泡</text>
+</g>`;
+
+const ART_PIE = `
+<g filter="url(#wob)">
+  <ellipse cx="180" cy="414" rx="78" ry="9" fill="#070c18" opacity=".42" filter="url(#soft)"/>
+  <rect x="104" y="230" width="152" height="168" rx="28" fill="#e0a34e"/>
+  <path d="M112,232 q11,-11 22,0 q11,11 22,0 q11,-11 22,0 q11,11 22,0 q11,-11 22,0 q11,11 22,0 q11,-11 22,0" stroke="#c98a2e" stroke-width="4.4" fill="none"/>
+  <path d="M112,396 q11,11 22,0 q11,-11 22,0 q11,11 22,0 q11,-11 22,0 q11,11 22,0 q11,-11 22,0" stroke="#c98a2e" stroke-width="4.4" fill="none"/>
+  <g fill="#b5651d">
+    <rect x="120" y="240" width="26" height="148" rx="12"/>
+    <rect x="158" y="240" width="26" height="148" rx="12"/>
+    <rect x="196" y="240" width="26" height="148" rx="12"/>
+  </g>
+  <g fill="#e6c229">
+    <circle cx="128" cy="268" r="6"/><circle cx="140" cy="292" r="6"/><circle cx="126" cy="318" r="6"/>
+    <circle cx="138" cy="344" r="6"/><circle cx="166" cy="262" r="6"/><circle cx="180" cy="288" r="6"/>
+    <circle cx="168" cy="314" r="6"/><circle cx="180" cy="340" r="6"/><circle cx="204" cy="272" r="6"/>
+    <circle cx="216" cy="298" r="6"/><circle cx="204" cy="326" r="6"/><circle cx="216" cy="352" r="6"/>
+  </g>
+  <g stroke="#8d5524" stroke-width="1.8" fill="none">
+    <path d="M124,282 q12,12 10,26 M168,300 q12,10 8,24 M204,306 q12,10 8,22"/>
+  </g>
+  <g fill="#fffdf5" opacity=".95">
+    <circle cx="114" cy="252" r="2.8"/><circle cx="246" cy="256" r="2.8"/>
+    <circle cx="116" cy="380" r="2.8"/><circle cx="244" cy="382" r="2.8"/>
+    <circle cx="180" cy="232" r="2.8"/><circle cx="180" cy="398" r="2.8"/>
+  </g>
+  <path d="M118,262 q62,-16 124,0" stroke="#f0c273" stroke-width="2.6" opacity=".5" fill="none"/>
+</g>
+<g stroke-width="1.2" fill="none">
+  <path d="M258,356 L264,356" stroke="#e0a34e"/><path d="M236,300 L264,300" stroke="#b5651d"/>
+  <path d="M102,300 L96,300" stroke="#fffdf5"/>
+</g>
+<g class="lbl">
+  <circle cx="255" cy="356" r="3.2" fill="#e0a34e" stroke="none"/><text x="268" y="360" fill="#f0c98d">酥脆外皮</text>
+  <circle cx="239" cy="300" r="3.2" fill="#b5651d" stroke="none"/><text x="268" y="304" fill="#e8a45c">肉桂苹果馅</text>
+  <circle cx="105" cy="300" r="3.2" fill="#fffdf5" stroke="none"/><text x="92" y="304" text-anchor="end" fill="#ffffff">糖霜粒</text>
+</g>`;
+
+const ART_CORN = `
+<g filter="url(#wob)">
+  <ellipse cx="180" cy="436" rx="54" ry="8" fill="#070c18" opacity=".42" filter="url(#soft)"/>
+  <path d="M146,352 h68 l-10,82 h-48 z" fill="#f5f0ea"/>
+  <path d="M146,352 h68 l-2,12 h-64 z" fill="#e8e2d8"/>
+  <rect x="144" y="344" width="72" height="11" rx="5" fill="#d7263d"/>
+  <ellipse cx="180" cy="310" rx="48" ry="36" fill="#ffd54f"/>
+  <g fill="#ffca28">
+    <circle cx="148" cy="292" r="7"/><circle cx="164" cy="288" r="7"/><circle cx="180" cy="288" r="7"/>
+    <circle cx="196" cy="290" r="7"/><circle cx="210" cy="296" r="7"/>
+    <circle cx="154" cy="308" r="7"/><circle cx="170" cy="306" r="7"/><circle cx="186" cy="306" r="7"/>
+    <circle cx="202" cy="310" r="7"/>
+    <circle cx="162" cy="324" r="7"/><circle cx="178" cy="324" r="7"/><circle cx="194" cy="324" r="7"/>
+    <circle cx="148" cy="322" r="7"/><circle cx="210" cy="322" r="7"/>
+    <circle cx="166" cy="338" r="7"/><circle cx="182" cy="338" r="7"/><circle cx="198" cy="338" r="7"/>
+  </g>
+  <g fill="#f9a825"><circle cx="172" cy="300" r="2.8"/><circle cx="192" cy="316" r="2.8"/><circle cx="162" cy="318" r="2.8"/></g>
+  <rect x="163" y="252" width="36" height="14" rx="7" fill="#fff59d"/>
+  <path d="M172,266 q4,10 0,15" stroke="#fff59d" stroke-width="4" fill="none" stroke-linecap="round"/>
+</g>
+<g stroke-width="1.2" fill="none">
+  <path d="M230,296 L264,296" stroke="#fff59d"/><path d="M232,318 L264,318" stroke="#ffca28"/>
+  <path d="M144,392 L96,392" stroke="#f5f0ea"/>
+</g>
+<g class="lbl">
+  <circle cx="227" cy="296" r="3.2" fill="#fff59d" stroke="none"/><text x="268" y="300" fill="#fff59d">黄油香</text>
+  <circle cx="229" cy="318" r="3.2" fill="#ffca28" stroke="none"/><text x="268" y="322" fill="#ffe082">甜玉米粒</text>
+  <circle cx="147" cy="392" r="3.2" fill="#f5f0ea" stroke="none"/><text x="92" y="396" text-anchor="end" fill="#f5f0ea">小纸杯</text>
+</g>`;
+
+const ART_SHAKE = `
+<g filter="url(#wob)">
+  <ellipse cx="180" cy="436" rx="58" ry="9" fill="#070c18" opacity=".42" filter="url(#soft)"/>
+  <path d="M140,284 h80 l-11,146 h-58 z" fill="#f3e5c0"/>
+  <path d="M138,284 h84 l-12,150 h-60 z" fill="none" stroke="#b0bec5" stroke-width="2.6"/>
+  <path d="M150,300 l-4,126" stroke="#ffffff" stroke-width="4" opacity=".7" fill="none"/>
+  <ellipse cx="180" cy="276" rx="43" ry="18" fill="#fffdf7"/>
+  <ellipse cx="180" cy="250" rx="35" ry="17" fill="#fffdf7"/>
+  <ellipse cx="180" cy="226" rx="25" ry="14" fill="#fffdf7"/>
+  <ellipse cx="180" cy="208" rx="15" ry="9" fill="#fffdf7"/>
+  <path d="M219,266 q12,20 3,36 q-16,-4 -13,-24 z" fill="#fffdf7"/>
+  <circle cx="180" cy="190" r="10" fill="#e53935"/>
+  <path d="M180,181 q7,-12 16,-15" stroke="#6d4c41" stroke-width="2.6" fill="none"/>
+  <rect x="204" y="188" width="15" height="122" rx="7" fill="#ec407a" transform="rotate(12 211 330)"/>
+  <g fill="#ffffff" transform="rotate(12 211 330)">
+    <rect x="204" y="204" width="15" height="9" rx="4"/><rect x="204" y="230" width="15" height="9" rx="4"/>
+    <rect x="204" y="256" width="15" height="9" rx="4"/>
+  </g>
+  <g>
+    <rect x="166" y="294" width="10" height="3.4" rx="1.7" fill="#ff7043" transform="rotate(-16 171 295)"/>
+    <rect x="192" y="304" width="10" height="3.4" rx="1.7" fill="#42a5f5" transform="rotate(20 197 305)"/>
+    <rect x="176" y="284" width="10" height="3.4" rx="1.7" fill="#ffee58" transform="rotate(-6 181 285)"/>
+  </g>
+</g>
+<g stroke-width="1.2" fill="none">
+  <path d="M226,238 L264,238" stroke="#fffdf7"/><path d="M228,356 L264,356" stroke="#f3e5c0"/>
+  <path d="M170,192 L96,192" stroke="#e53935"/>
+</g>
+<g class="lbl">
+  <circle cx="223" cy="238" r="3.2" fill="#fffdf7" stroke="none"/><text x="268" y="242" fill="#ffffff">鲜奶油</text>
+  <circle cx="225" cy="356" r="3.2" fill="#f3e5c0" stroke="none"/><text x="268" y="360" fill="#f7e7bd">奶昔体</text>
+  <circle cx="173" cy="192" r="3.2" fill="#e53935" stroke="none"/><text x="92" y="196" text-anchor="end" fill="#ff8a80">樱桃</text>
+</g>`;
+
+const ART_MCMUFFIN = `
+<g filter="url(#wob)">
+  <ellipse cx="180" cy="414" rx="68" ry="8" fill="#070c18" opacity=".42" filter="url(#soft)"/>
+  <ellipse cx="180" cy="384" rx="66" ry="27" fill="#e8c48a"/>
+  <g fill="#d4a05e">
+    <circle cx="140" cy="392" r="4.6"/><circle cx="158" cy="397" r="4.6"/><circle cx="178" cy="398" r="4.6"/>
+    <circle cx="198" cy="397" r="4.6"/><circle cx="216" cy="392" r="4.6"/>
+  </g>
+  <path d="M120,350 q60,13 120,0 q-6,15 -60,15 q-54,0 -60,-15 z" fill="#ffc94d"/>
+  <ellipse cx="180" cy="336" rx="58" ry="21" fill="#fffdf5"/>
+  <circle cx="180" cy="334" r="17" fill="#ffc107"/>
+  <circle cx="173" cy="328" r="5" fill="#ffe082"/>
+  <ellipse cx="180" cy="302" rx="56" ry="20" fill="#8d5524"/>
+  <g fill="#6d4020"><circle cx="156" cy="298" r="2.8"/><circle cx="202" cy="298" r="2.8"/><circle cx="180" cy="306" r="2.8"/></g>
+  <ellipse cx="180" cy="256" rx="62" ry="32" fill="#ecc992"/>
+  <g fill="#d4a05e">
+    <circle cx="146" cy="268" r="4.6"/><circle cx="166" cy="274" r="4.6"/><circle cx="190" cy="274" r="4.6"/>
+    <circle cx="212" cy="268" r="4.6"/><circle cx="180" cy="260" r="3.6"/>
+  </g>
+  <path d="M138,242 q42,-13 84,0" stroke="#d4a05e" stroke-width="2" fill="none" opacity=".5"/>
+</g>
+<g stroke-width="1.2" fill="none">
+  <path d="M248,302 L264,302" stroke="#8d5524"/><path d="M248,336 L264,336" stroke="#ffc107"/>
+  <path d="M248,360 L264,360" stroke="#ffc94d"/><path d="M116,256 L96,256" stroke="#ecc992"/>
+</g>
+<g class="lbl">
+  <circle cx="245" cy="302" r="3.2" fill="#8d5524" stroke="none"/><text x="268" y="306" fill="#c98a5c">猪柳排</text>
+  <circle cx="245" cy="336" r="3.2" fill="#ffc107" stroke="none"/><text x="268" y="340" fill="#ffe082">嫩蛋</text>
+  <circle cx="245" cy="360" r="3.2" fill="#ffc94d" stroke="none"/><text x="268" y="364" fill="#ffe08a">吉士</text>
+  <circle cx="119" cy="256" r="3.2" fill="#ecc992" stroke="none"/><text x="92" y="260" text-anchor="end" fill="#ecc992">英式马芬</text>
+</g>`;
+
+/* ================= 卡册数据 ================= */
+const FOODS=[
+  {key:'big_mac',   name:'巨无霸',      rarity:'SSR', art:ART_BIGMAC,   flavor:'三层面包两层肉，麦门永恒的王者。'},
+  {key:'mcflurry',  name:'麦旋风',      rarity:'SSR', art:ART_MCFLURRY, flavor:'旋转吧冰淇淋！甜党的信仰之光。'},
+  {key:'angus',     name:'安格斯厚牛堡', rarity:'SSR', art:ART_ANGUS,    flavor:'厚切安格斯，一口肉欲的巅峰。'},
+  {key:'spicy',     name:'麦辣鸡腿',    rarity:'SR',  art:ART_SPICY,    flavor:'辣气冲天，辣党的终极奥义。'},
+  {key:'fries',     name:'薯条',        rarity:'SR',  art:ART_FRIES,    flavor:'金黄长条，不蘸酱也快乐。'},
+  {key:'grilled',   name:'板烧鸡腿',    rarity:'SR',  art:ART_GRILLED,  flavor:'整块鸡腿现烤，烟火气里的侠客。'},
+  {key:'double',    name:'双层吉士',    rarity:'SR',  art:ART_DOUBLE,   flavor:'双层芝士叠加，力量与热量的化身。'},
+  {key:'coke',      name:'可乐',        rarity:'R',   art:ART_COKE,     flavor:'快乐水的化身，气泡就是它的心跳。'},
+  {key:'nuggets',   name:'麦乐鸡',      rarity:'R',   art:ART_NUGGETS,  flavor:'圆滚滚的团子，蘸酱才更快乐。'},
+  {key:'fish',      name:'麦香鱼',      rarity:'R',   art:ART_FISH,     flavor:'深海来的清爽，清淡却自有风骨。'},
+  {key:'cone',      name:'甜筒',        rarity:'R',   art:ART_CONE,     flavor:'夏日限定，融化前的甜美芭蕾。'},
+  {key:'mccafe',    name:'麦咖啡',      rarity:'R',   art:ART_MCCAFE,   flavor:'一杯拿铁，唤醒打工人的早八。'},
+  {key:'apple_pie', name:'苹果派',      rarity:'N',   art:ART_PIE,      flavor:'刚出锅的酥皮，烫嘴也要咬一口。'},
+  {key:'corn',      name:'甜玉米',      rarity:'N',   art:ART_CORN,     flavor:'朴实无华的田坎之光，健康担当。'},
+  {key:'shake',     name:'香草奶昔',    rarity:'N',   art:ART_SHAKE,    flavor:'浓稠到吸不上来，却戒不掉。'},
+  {key:'mcmuffin',  name:'猪柳蛋堡',    rarity:'N',   art:ART_MCMUFFIN, flavor:'清晨的第一缕烟火，早餐王者。'},
+];
+const PY={big_mac:'JU WU BAO',mcflurry:'MAI XUAN FENG',angus:'AN GE SI HOU NIU BAO',
+  spicy:'MAI LA JI TUI',fries:'SHU TIAO',grilled:'BAN SHAO JI TUI',double:'SHUANG CENG JI SHI',
+  coke:'KE LE',nuggets:'MAI LE JI',fish:'MAI XIANG YU',cone:'TIAN TONG',mccafe:'MAI KA FEI',
+  apple_pie:'PING GUO PAI',corn:'TIAN YU MI',shake:'XIANG CAO NAI XI',mcmuffin:'ZHU LIU DAN BAO'};
+const TOTAL=FOODS.length;
+const BY_R={SSR:[],SR:[],R:[],N:[]};
+FOODS.forEach(f=>BY_R[f.rarity].push(f));
+const RATE=[['SSR',5],['SR',15],['R',35],['N',45]];
+const RCOLOR={SSR:'#ff8a00',SR:'#a66bff',R:'#3f9bff',N:'#b6b1a8'};
+const RAR_GRAD={SSR:'g-ssr',SR:'g-sr',R:'g-r',N:'g-n'};
+
+const fs = n => n>=7 ? 28 : n>=5 ? 32 : 38;
+
+/* ================= 卡牌 SVG（内联 / 导出两用） ================= */
+function cardSVG(f, standalone, locked){
+  const defs = standalone ? '<defs>'+DEFS+'</defs>' : '';
+  const dim  = standalone ? ' width="720" height="960"' : '';
+  const core = `
+    <rect width="360" height="480" fill="url(#sky)"/>
+    <g opacity=".05">${RAYS}</g>
+    ${STARS}
+    <circle cx="180" cy="285" r="155" fill="url(#ctrGlow)"/>
+    <rect width="360" height="480" fill="url(#vig)"/>
+    <rect x="12" y="12" width="336" height="456" rx="8" fill="none" stroke="#d8b26a" stroke-width="1.8"/>
+    <rect x="18" y="18" width="324" height="444" rx="5" fill="none" stroke="#e8c987" stroke-width="0.7"/>
+    <text x="180" y="300" text-anchor="middle" font-family="KaiTi,STKaiti,serif" font-size="96"
+          fill="#ffffff" opacity="0.05" transform="rotate(-12 180 300)">麦门</text>
+    <text x="180" y="60" text-anchor="middle" font-family="KaiTi,STKaiti,serif"
+          font-size="${fs(f.name.length)}" fill="#f6e7c3" letter-spacing="4" filter="url(#tglow)">${f.name}</text>
+    <text x="180" y="82" text-anchor="middle" font-size="11.5" fill="#cbb26b" letter-spacing="5">${PY[f.key]}</text>
+    <line x1="122" y1="92" x2="238" y2="92" stroke="#b08d4a" stroke-width="0.9"/>
+    ${SPRINKLES_TOP}
+    ${f.art}
+    ${SEAL}
+    <g transform="translate(320,28)">
+      <rect x="-27" y="-13" width="54" height="26" rx="7" fill="url(#${RAR_GRAD[f.rarity]})" stroke="rgba(255,255,255,.4)" stroke-width="1"/>
+      <text x="0" y="5" text-anchor="middle" font-size="13" font-weight="800" fill="#fff"
+            style="paint-order:stroke;stroke:#3a2a00;stroke-width:2.5">${f.rarity}</text>
+    </g>`;
+  const inner = locked
+    ? `<rect width="360" height="480" fill="url(#sky)"/>
+       <g opacity=".05">${RAYS}</g>
+       ${STARS}
+       <circle cx="180" cy="285" r="155" fill="url(#ctrGlow)"/>
+       <rect width="360" height="480" fill="url(#vig)"/>
+       <rect x="12" y="12" width="336" height="456" rx="8" fill="none" stroke="#d8b26a" stroke-width="1.8"/>
+       <rect x="18" y="18" width="324" height="444" rx="5" fill="none" stroke="#e8c987" stroke-width="0.7"/>
+       <text x="180" y="330" text-anchor="middle" font-family="KaiTi,STKaiti,serif" font-size="96"
+             fill="#ffffff" opacity="0.05" transform="rotate(-12 180 330)">麦门</text>
+       <text x="180" y="330" text-anchor="middle" font-size="150" font-weight="900"
+             fill="url(#g-ssr)" filter="url(#tglow)" opacity=".9">?</text>`
+    : core;
+  return `<svg viewBox="0 0 360 480" xmlns="http://www.w3.org/2000/svg"${dim}>${defs}${inner}</svg>`;
+}
+
+function cardEl(f, locked){
+  const el=document.createElement('div');
+  el.className='card rar-'+f.rarity.toLowerCase();
+  el.innerHTML=cardSVG(f,false,locked)
+    +'<div class="holo"></div><div class="sweep"></div><div class="glare"></div>';
+  return el;
+}
+
+/* ================= 存档 ================= */
+let storageOK=true;
+let save=load();
+function load(){try{return JSON.parse(localStorage.getItem('mcd-gacha'))||{owned:{},draws:0,ssr:0,sr:0}}catch(e){storageOK=false;return{owned:{},draws:0,ssr:0,sr:0}}}
+function persist(){
+  try{localStorage.setItem('mcd-gacha',JSON.stringify(save))}
+  catch(e){ // 沙箱预览 iframe / 隐私模式 / 存储被禁：只保留内存存档，不阻塞 UI
+    if(storageOK){storageOK=false;
+      const w=document.getElementById('storageWarn');if(w)w.style.display='block';}
+  }
+}
+
+function rollRarity(){let r=Math.random()*100,acc=0;for(const [k,w]of RATE){acc+=w;if(r<acc)return k}return 'N'}
+function pick(r){const arr=BY_R[r];return arr[Math.floor(Math.random()*arr.length)]}
+function drawOne(){return pick(rollRarity())}
+function drawTen(){const out=[];for(let i=0;i<10;i++)out.push(drawOne());
+  if(!out.some(c=>c.rarity!=='N')){out[Math.floor(Math.random()*10)]=pick('R')}
+  return out}
+
+function record(f){save.draws++;save.owned[f.key]=(save.owned[f.key]||0)+1;
+  if(f.rarity==='SSR')save.ssr++;if(f.rarity==='SR')save.sr++;
+  refresh();persist()}   // 先刷新 UI，再落盘：存储故障不再冻结统计
+
+function flashOn(){const f=document.getElementById('flash');f.classList.remove('go');void f.offsetWidth;f.classList.add('go')}
+
+function showSingle(f){
+  const stage=document.getElementById('stage');
+  stage.innerHTML='';
+  const wrap=document.createElement('div');
+  wrap.className='revealwrap single';
+  wrap.appendChild(cardEl(f));
+  const cover=document.createElement('div');
+  cover.className='cover';cover.textContent='?';
+  wrap.appendChild(cover);
+  const fl=document.createElement('div');
+  fl.className='flavor-line';fl.textContent=f.flavor;
+  stage.appendChild(wrap);stage.appendChild(fl);
+  requestAnimationFrame(()=>requestAnimationFrame(()=>wrap.classList.add('revealed')));
+  if(f.rarity==='SSR'||f.rarity==='SR')flashOn();
+  record(f);
+}
+
+function showTen(list){
+  const stage=document.getElementById('stage');
+  stage.innerHTML='';
+  const grid=document.createElement('div');
+  grid.className='result-grid';
+  list.forEach((f,i)=>{
+    const cell=document.createElement('div');
+    cell.className='revealwrap';
+    cell.appendChild(cardEl(f));
+    const cover=document.createElement('div');
+    cover.className='cover';cover.textContent='?';
+    cell.appendChild(cover);
+    grid.appendChild(cell);
+    setTimeout(()=>cell.classList.add('revealed'),130*i);
+  });
+  stage.appendChild(grid);
+  if(list.some(f=>f.rarity==='SSR'))flashOn();
+  list.forEach(record);
+}
+
+function luckScore(){if(save.draws===0)return '—';
+  const s=(save.ssr*3+save.sr*1.2)/save.draws*100;return s.toFixed(1)}
+
+function refresh(){
+  const ownedN=Object.keys(save.owned).length;
+  document.getElementById('ownedN').textContent=ownedN;
+  const pct=Math.round(ownedN/TOTAL*100);
+  document.getElementById('ownedPct').textContent=pct+'%';
+  document.getElementById('progBar').style.width=pct+'%';
+  document.getElementById('statDraws').textContent=save.draws;
+  document.getElementById('statSSR').textContent=save.ssr;
+  document.getElementById('statSR').textContent=save.sr;
+  document.getElementById('statLuck').textContent=luckScore();
+  document.getElementById('pityInfo').textContent='本抽累计：'+save.draws;
+  const grid=document.getElementById('grid');
+  grid.innerHTML=FOODS.map(f=>{const n=save.owned[f.key]||0;const owned=n>0;
+    return `<div class="cell">
+      ${n>1?`<span class="count-badge">×${n}</span>`:''}
+      <div class="card rar-${f.rarity.toLowerCase()}">${cardSVG(f,false,!owned)}
+        <div class="holo"></div><div class="sweep"></div><div class="glare"></div></div>
+    </div>`;}).join('');
+}
+
+document.getElementById('btn1').onclick=()=>showSingle(drawOne());
+document.getElementById('btn10').onclick=()=>showTen(drawTen());
+document.getElementById('btnReset').onclick=()=>{if(confirm('清空收集进度？')){save={owned:{},draws:0,ssr:0,sr:0};refresh();persist()}};
+document.getElementById('btnShare').onclick=makeShare;
+
+/* 鼠标跟随高光 */
+document.addEventListener('pointermove',e=>{
+  const c=e.target.closest&&e.target.closest('.card'); if(!c)return;
+  const r=c.getBoundingClientRect();
+  c.style.setProperty('--mx',((e.clientX-r.left)/r.width*100).toFixed(1)+'%');
+  c.style.setProperty('--my',((e.clientY-r.top)/r.height*100).toFixed(1)+'%');
+});
+
+/* ================= 分享报告卡（SVG → Canvas → PNG） ================= */
+function svgImg(f, locked){
+  return new Promise(res=>{
+    const img=new Image();
+    img.onload=()=>res(img);
+    img.onerror=()=>res(null);
+    img.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(cardSVG(f,true,locked));
+  });
+}
+function rr(x,cx,cy,w,h,r){ // roundRect 兼容
+  if(x.roundRect){x.beginPath();x.roundRect(cx,cy,w,h,r);return}
+  x.beginPath();x.moveTo(cx+r,cy);x.arcTo(cx+w,cy,cx+w,cy+h,r);x.arcTo(cx+w,cy+h,cx,cy+h,r);
+  x.arcTo(cx,cy+h,cx,cy,r);x.arcTo(cx,cy,cx+w,cy,r);x.closePath();
+}
+async function makeShare(){
+  const btn=document.getElementById('btnShare');
+  btn.disabled=true;btn.textContent='生成中…';
+  try{
+    const imgs=await Promise.all(FOODS.map(f=>svgImg(f,!save.owned[f.key])));
+    const owned=FOODS.filter(f=>save.owned[f.key]);
+    const rarest=owned.slice().sort((a,b)=>({SSR:0,SR:1,R:2,N:3}[a.rarity]-{SSR:0,SR:1,R:2,N:3}[b.rarity]))[0];
+    let title='麦门萌新';
+    if(save.ssr>=2)title='欧皇本皇';else if(save.ssr>=1)title='麦门锦鲤';
+    else if(owned.length>=TOTAL)title='图鉴收藏家';else if(save.draws>=20)title='麦门老饕';
+    const W=660,H=1080,cv=document.createElement('canvas');cv.width=W;cv.height=H;
+    const x=cv.getContext('2d');
+    const g=x.createLinearGradient(0,0,W,H);g.addColorStop(0,'#fff3d6');g.addColorStop(1,'#ffe0d8');
+    x.fillStyle=g;x.fillRect(0,0,W,H);
+    x.textAlign='center';
+    x.fillStyle='#da291c';x.font='bold 40px "PingFang SC","Microsoft YaHei",sans-serif';
+    x.fillText('我的麦门图鉴报告',W/2,74);
+    x.fillStyle='#7a6b52';x.font='16px sans-serif';
+    x.fillText('1024 程序员节 · 麦当劳创意开发大赛',W/2,104);
+    x.fillStyle='#2b2118';x.font='bold 30px sans-serif';
+    x.fillText(title,W/2,158);
+    x.fillStyle='#5a4a38';x.font='17px sans-serif';
+    x.fillText(`收集 ${owned.length}/${TOTAL} · 抽卡 ${save.draws} 次 · SSR ${save.ssr} · SR ${save.sr}`,W/2,196);
+    if(rarest)x.fillText(`本命卡：${rarest.name}（${rarest.rarity}）`,W/2,224);
+    const cols=4,cw=140,ch=186.7,gap=12,gapx=(W-cols*cw-(cols-1)*gap)/2;
+    FOODS.forEach((f,i)=>{
+      const col=i%cols,row=Math.floor(i/cols);
+      const cx=gapx+col*(cw+gap), cy=248+row*(ch+gap);
+      const img=imgs[i];
+      if(img){
+        x.save();rr(x,cx,cy,cw,ch,12);x.clip();x.drawImage(img,cx,cy,cw,ch);x.restore();
+      }else{
+        x.fillStyle='#f4f0e6';rr(x,cx,cy,cw,ch,12);x.fill();
+      }
+      x.strokeStyle=RCOLOR[f.rarity];x.lineWidth=2;rr(x,cx,cy,cw,ch,12);x.stroke();
+    });
+    x.fillStyle='#a99c86';x.font='13px sans-serif';x.textAlign='center';
+    x.fillText('麦门图鉴 · 非官方粉丝向作品 · 餐品价格以官方为准',W/2,H-24);
+    const a=document.createElement('a');a.download='麦门图鉴报告.png';a.href=cv.toDataURL('image/png');a.click();
+  }catch(e){
+    alert('生成失败：'+e.message);
+  }finally{
+    btn.disabled=false;btn.textContent='📸 生成分享报告卡';
+  }
+}
+
+refresh();
+if(!storageOK){const w=document.getElementById('storageWarn');if(w)w.style.display='block'}
+</script>
+</body>
+</html>

@@ -1,0 +1,10 @@
+# OS / 编辑器
+Thumbs.db
+desktop.ini
+.DS_Store
+*.swp
+
+# 临时与日志
+*.tmp
+*.log
+_smoke_*.png
